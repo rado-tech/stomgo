@@ -36,21 +36,26 @@ async function ensureChannel() {
   });
 }
 
-/** Ruxsat so'rash + tokenni serverga yuborish. Kirgan foydalanuvchi uchun chaqiriladi. */
-export async function registerPush(): Promise<{ ok: boolean; reason?: string }> {
+/**
+ * Ruxsat so'rash + tokenni serverga yuborish.
+ * `silent: true` — ruxsat SO'RALMAYDI: allaqachon berilgan bo'lsagina tokenni yangilaydi.
+ * Ilova ochilishida shu rejim ishlatiladi, ruxsat esa Profil bo'limidagi tugma orqali so'raladi.
+ */
+export async function registerPush(opts?: { silent?: boolean }): Promise<{ ok: boolean; reason?: string }> {
   try {
     if (!Device.isDevice) return { ok: false, reason: "Emulyatorda push ishlamaydi" };
     if (!(await getToken())) return { ok: false, reason: "Avval tizimga kiring" };
 
-    await ensureChannel();
-
     const current = await Notifications.getPermissionsAsync();
     let status = current.status;
     if (status !== "granted") {
+      if (opts?.silent) return { ok: false, reason: "Ruxsat hali berilmagan" };
       const req = await Notifications.requestPermissionsAsync();
       status = req.status;
     }
     if (status !== "granted") return { ok: false, reason: "Ruxsat berilmadi" };
+
+    await ensureChannel();
 
     const projectId =
       (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId ??

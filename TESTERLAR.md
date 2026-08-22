@@ -29,7 +29,24 @@
 
 ## Nimalarni sinash kerak
 
-**Yangi (v1.7) — yangilangan dizayn va suhbatlar:**
+**Yangi (v1.8) — push, rasm, vaqtni o'zgartirish:**
+- [ ] **Push bildirishnoma**: Profil → «Push bildirishnoma» → «Yoqish» → ruxsat bering.
+      Saytda ham bor (Profil sahifasida) — u yerda «Sinab ko'rish» tugmasi darhol sinaydi
+- [ ] Klinika xabar yozganda telefonga bildirishnoma kelishi (ilova yopiq bo'lsa ham)
+- [ ] Bildirishnomani bosganda to'g'ri suhbat/profil ochilishi
+- [ ] **Suhbatda rasm**: chatdagi rasm tugmasi → Kamera yoki Galereya → tish rasmini yuborish
+- [ ] Rasm + matn birga yuborish, rasmni bosib kattalashtirish (saytda)
+- [ ] **Vaqtni o'zgartirish**: Profil → yozuv → «Vaqtni o'zgartirish» → yangi kun va soat
+- [ ] Yangi vaqt yuborilgach yozuv «Kutilmoqda» ga qaytishi, klinikaga xabar borishi
+- [ ] 3 martadan ko'p o'zgartirib bo'lmasligi
+- [ ] **Klinika sharhga javob yozishi** (klinika paneli → Sharhlar) va javob klinika
+      sahifasida ko'rinishi
+
+> Diqqat: Android ilovadagi push hozircha **Firebase ulanmaguncha ishlamaydi**
+> (loyiha egasi sozlaydi). Sayt/PWA dagi push esa hozir ishlaydi.
+> Telegram eslatmalari ikkalasidan mustaqil — doim ishlaydi.
+
+**Oldingi (v1.7) — yangilangan dizayn va suhbatlar:**
 - [ ] Pastki menyu 5 ta bo'ldi: **Asosiy · Klinikalar · AI (o'rtadagi katta tugma) · Xabarlar · Profil**
 - [ ] Asosiy oynada **VIP e'lonlar** lentasi (yon tomonga suriladi) va yaqinlik bo'yicha ro'yxat
 - [ ] **Klinikalar** bo'limi: qidiruv + Tavsiya/Reyting/Yaqinlik/Narx saralash

@@ -87,7 +87,9 @@ function Root() {
 
   // Push: tokenni ro'yxatdan o'tkazamiz va bosilganda kerakli ekranga o'tamiz
   useEffect(() => {
-    void registerPush();
+    // Ruxsat oldin berilgan bo'lsagina tokenni yangilaymiz.
+    // Birinchi marta so'rash Profil → «Push bildirishnoma» tugmasi orqali bo'ladi.
+    void registerPush({ silent: true });
 
     const go = (data: unknown) => {
       const link = parseLink(data);
