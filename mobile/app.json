@@ -1,0 +1,55 @@
+{
+  "expo": {
+    "name": "StomGo",
+    "slug": "stomgo",
+    "version": "1.8.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "backgroundColor": "#f7f9fa",
+    "splash": {
+      "image": "./assets/icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0f766e"
+    },
+    "android": {
+      "package": "uz.stomgo.app",
+      "versionCode": 10,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0f766e"
+      },
+      "permissions": [
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION",
+        "android.permission.POST_NOTIFICATIONS",
+        "android.permission.READ_MEDIA_IMAGES"
+      ]
+    },
+    "ios": {
+      "bundleIdentifier": "uz.stomgo.app",
+      "supportsTablet": false
+    },
+    "extra": {
+      "apiUrl": "https://closer-dvds-survey-webcast.trycloudflare.com"
+    },
+    "plugins": [
+      "@maplibre/maplibre-react-native",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/icon.png",
+          "color": "#0f766e",
+          "defaultChannel": "default"
+        }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Tish rasmini suhbatga yuborish uchun galereyaga ruxsat kerak.",
+          "cameraPermission": "Tish rasmini suratga olish uchun kameraga ruxsat kerak."
+        }
+      ]
+    ]
+  }
+}

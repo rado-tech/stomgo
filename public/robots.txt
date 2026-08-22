@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /clinic
+Disallow: /admin
+Disallow: /api/

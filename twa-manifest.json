@@ -1,0 +1,26 @@
+{
+  "packageId": "uz.stomgo.app",
+  "host": "stomgo.example.com",
+  "name": "StomGo — Toshkent stomatologiyalari",
+  "launcherName": "StomGo",
+  "display": "standalone",
+  "themeColor": "#0f766e",
+  "navigationColor": "#0f766e",
+  "backgroundColor": "#f7f9fa",
+  "startUrl": "/",
+  "iconUrl": "https://stomgo.example.com/icon-512.png",
+  "maskableIconUrl": "https://stomgo.example.com/icon-maskable-512.png",
+  "splashScreenFadeOutDuration": 300,
+  "enableNotifications": true,
+  "orientation": "portrait",
+  "isChromeOSOnly": false,
+  "webManifestUrl": "https://stomgo.example.com/manifest.webmanifest",
+  "fallbackType": "customtabs",
+  "enableSiteSettingsShortcut": true,
+  "minSdkVersion": 21,
+  "appVersionName": "1.0.0",
+  "appVersionCode": 1,
+  "shortcuts": [
+    { "name": "AI maslahat", "short_name": "Triaj", "url": "/triaj", "chosenIconUrl": "https://stomgo.example.com/icon-512.png" }
+  ]
+}

@@ -1,0 +1,97 @@
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=stomgo
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD .env faylda belgilanishi shart}
+      - POSTGRES_DB=stomgo
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U stomgo"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  # Har deploy'da migratsiyalarni qo'llaydi va tugaydi
+  migrate:
+    build:
+      context: .
+      target: build
+    command: npx prisma migrate deploy
+    environment:
+      - DATABASE_URL=postgresql://stomgo:${DB_PASSWORD}@db:5432/stomgo?schema=public
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: "no"
+
+  app:
+    build: .
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=postgresql://stomgo:${DB_PASSWORD}@db:5432/stomgo?schema=public
+      - AUTH_SECRET=${AUTH_SECRET:?AUTH_SECRET .env faylda belgilanishi shart}
+      - GEMINI_API_KEY=${GEMINI_API_KEY:-}
+      - ESKIZ_EMAIL=${ESKIZ_EMAIL:-}
+      - ESKIZ_PASSWORD=${ESKIZ_PASSWORD:-}
+      - ESKIZ_FROM=${ESKIZ_FROM:-4546}
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+      - TELEGRAM_BOT_USERNAME=${TELEGRAM_BOT_USERNAME:-}
+      - SENTRY_DSN=${SENTRY_DSN:-}
+      # Web Push (VAPID) — `npx web-push generate-vapid-keys` bilan yaratiladi
+      - VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
+      - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:admin@stomgo.uz}
+      - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      - UPLOADS_DIR=/app/uploads
+    volumes:
+      - uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:3000/api/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    expose:
+      - "3000"
+
+  # Telegram bot — TELEGRAM_BOT_TOKEN berilmagan bo'lsa jimgina o'chadi
+  bot:
+    build:
+      context: .
+      target: build
+    command: npx tsx scripts/bot.ts
+    environment:
+      - DATABASE_URL=postgresql://stomgo:${DB_PASSWORD}@db:5432/stomgo?schema=public
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN:-}
+    depends_on:
+      db:
+        condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
+    restart: on-failure
+
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      - app
+
+volumes:
+  pg-data:
+  uploads:
+  caddy-data:
+  caddy-config:

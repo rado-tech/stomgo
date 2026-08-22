@@ -1,26 +1,212 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f7f9fa;
+  --foreground: #101a1c;
+  --brand: #0f766e;
+  --brand-dark: #115e59;
+  --brand-light: #ccfbf1;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-brand: var(--brand);
+  --color-brand-dark: var(--brand-dark);
+  --color-brand-light: var(--brand-light);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-size: 15px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
+
+h1, h2, h3 {
+  letter-spacing: -0.015em;
+}
+
+::selection {
+  background: #99f6e4;
+  color: #134e4a;
+}
+
+/* Klaviatura bilan yurganda aniq fokus halqasi */
+:focus-visible {
+  outline: 2px solid #0d9488;
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+button, a {
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+}
+
+/* Xarita markerlari */
+.sg-marker {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1.5px solid #0f766e;
+  color: #0f766e;
+  border-radius: 9999px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  white-space: nowrap;
+  transition: transform 0.12s ease;
+}
+.sg-marker:hover { transform: scale(1.06); }
+.sg-marker.selected {
+  background: #0f766e;
+  color: #fff;
+}
+.sg-marker.closed {
+  border-color: #9ca3af;
+  color: #6b7280;
+}
+.sg-marker.closed.selected {
+  background: #6b7280;
+  color: #fff;
+  border-color: #6b7280;
+}
+
+/* Skelet yuklanish */
+@keyframes sg-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.sg-skeleton {
+  animation: sg-pulse 1.6s ease-in-out infinite;
+  background: #e5e7eb;
+  border-radius: 8px;
+}
+
+/* Modal/sheet animatsiyasi */
+@keyframes sg-slide-up {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+.sg-sheet { animation: sg-slide-up 0.22s ease; }
+
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
+
+/* ===================== TUNGI REJIM =====================
+   data-theme="dark" html elementiga qo'yiladi (ThemeToggle).
+   Eng ko'p ishlatiladigan utility klasslar qayta bo'yaladi. */
+html[data-theme="dark"] {
+  --background: #0b1416;
+  --foreground: #ffffff;
+  color-scheme: dark;
+}
+html[data-theme="dark"] .bg-white,
+html[data-theme="dark"] .bg-white\/95 { background-color: #162225 !important; }
+html[data-theme="dark"] .bg-zinc-50 { background-color: #121e21 !important; }
+html[data-theme="dark"] .bg-zinc-100 { background-color: #1f2d31 !important; }
+html[data-theme="dark"] .bg-zinc-900 { background-color: #05090a !important; }
+html[data-theme="dark"] .border-zinc-100,
+html[data-theme="dark"] .border-zinc-200,
+html[data-theme="dark"] .border-zinc-300 { border-color: #2c3f44 !important; }
+/* Tunda yozuvlar OQ — o'qish oson bo'lishi uchun */
+html[data-theme="dark"] .text-zinc-900 { color: #ffffff !important; }
+html[data-theme="dark"] .text-zinc-700 { color: #eef4f5 !important; }
+html[data-theme="dark"] .text-zinc-600 { color: #dbe4e6 !important; }
+html[data-theme="dark"] .text-zinc-500 { color: #b3c0c4 !important; }
+html[data-theme="dark"] .text-zinc-400 { color: #8b9a9e !important; }
+html[data-theme="dark"] .bg-teal-50,
+html[data-theme="dark"] .bg-teal-50\/40 { background-color: rgba(15, 118, 110, 0.18) !important; }
+html[data-theme="dark"] .text-teal-800,
+html[data-theme="dark"] .text-teal-700 { color: #5eead4 !important; }
+html[data-theme="dark"] .bg-amber-50 { background-color: rgba(217, 119, 6, 0.15) !important; }
+html[data-theme="dark"] .text-amber-800, html[data-theme="dark"] .text-amber-700 { color: #fbbf24 !important; }
+html[data-theme="dark"] .bg-red-50 { background-color: rgba(220, 38, 38, 0.15) !important; }
+html[data-theme="dark"] .text-red-800, html[data-theme="dark"] .text-red-700 { color: #fca5a5 !important; }
+html[data-theme="dark"] .bg-emerald-50 { background-color: rgba(5, 150, 105, 0.15) !important; }
+html[data-theme="dark"] .text-emerald-800, html[data-theme="dark"] .text-emerald-700 { color: #6ee7b7 !important; }
+html[data-theme="dark"] .bg-sky-50 { background-color: rgba(2, 132, 199, 0.15) !important; }
+html[data-theme="dark"] .text-sky-800, html[data-theme="dark"] .text-sky-700 { color: #7dd3fc !important; }
+html[data-theme="dark"] .bg-violet-50 { background-color: rgba(124, 58, 237, 0.15) !important; }
+html[data-theme="dark"] .text-violet-800, html[data-theme="dark"] .text-violet-700 { color: #c4b5fd !important; }
+html[data-theme="dark"] .bg-pink-50 { background-color: rgba(219, 39, 119, 0.15) !important; }
+html[data-theme="dark"] .text-pink-800, html[data-theme="dark"] .text-pink-700 { color: #f9a8d4 !important; }
+html[data-theme="dark"] .sg-skeleton { background: #1c2a2e; }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #34464b; }
+html[data-theme="dark"] .shadow-sm,
+html[data-theme="dark"] .shadow-md,
+html[data-theme="dark"] .shadow-lg { --tw-shadow-color: rgba(0,0,0,0.5); }
+html[data-theme="dark"] input,
+html[data-theme="dark"] textarea,
+html[data-theme="dark"] select { background-color: #101b1e; color: #e2e8ea; }
+html[data-theme="dark"] input::placeholder,
+html[data-theme="dark"] textarea::placeholder { color: #64757a; }
+html[data-theme="dark"] .md\:ring-zinc-200,
+html[data-theme="dark"] .ring-zinc-200 { --tw-ring-color: #27383d !important; }
+
+/* Tungi rejim — o'qiluvchanlik tuzatishlari */
+html[data-theme="dark"] .text-zinc-800 { color: #d5dee0 !important; }
+html[data-theme="dark"] .bg-white\/90 { background-color: rgba(21, 33, 36, 0.92) !important; }
+html[data-theme="dark"] .border-zinc-50 { border-color: #1e2c30 !important; }
+html[data-theme="dark"] .border-teal-300 { border-color: rgba(45, 212, 191, 0.35) !important; }
+html[data-theme="dark"] .border-teal-600 { border-color: #2dd4bf !important; }
+html[data-theme="dark"] .border-amber-200 { border-color: rgba(217, 119, 6, 0.35) !important; }
+html[data-theme="dark"] .border-amber-300 { border-color: rgba(217, 119, 6, 0.45) !important; }
+html[data-theme="dark"] .border-red-200, html[data-theme="dark"] .border-red-300 { border-color: rgba(220, 38, 38, 0.4) !important; }
+html[data-theme="dark"] .border-sky-400, html[data-theme="dark"] .border-sky-500 { border-color: rgba(56, 189, 248, 0.5) !important; }
+html[data-theme="dark"] .border-emerald-200 { border-color: rgba(5, 150, 105, 0.4) !important; }
+html[data-theme="dark"] .border-pink-200 { border-color: rgba(219, 39, 119, 0.4) !important; }
+html[data-theme="dark"] .border-violet-200 { border-color: rgba(124, 58, 237, 0.4) !important; }
+html[data-theme="dark"] .bg-teal-100 { background-color: rgba(45, 212, 191, 0.2) !important; }
+html[data-theme="dark"] .bg-emerald-100 { background-color: rgba(5, 150, 105, 0.22) !important; }
+html[data-theme="dark"] .text-teal-600 { color: #2dd4bf !important; }
+html[data-theme="dark"] .text-red-600 { color: #f87171 !important; }
+html[data-theme="dark"] .text-emerald-600 { color: #34d399 !important; }
+html[data-theme="dark"] .text-sky-600 { color: #38bdf8 !important; }
+html[data-theme="dark"] .text-amber-600 { color: #fbbf24 !important; }
+html[data-theme="dark"] .hover\:bg-zinc-50:hover { background-color: #1a282c !important; }
+html[data-theme="dark"] .hover\:bg-zinc-100:hover,
+html[data-theme="dark"] .hover\:bg-zinc-200:hover { background-color: #243438 !important; }
+html[data-theme="dark"] .hover\:bg-red-50:hover { background-color: rgba(220, 38, 38, 0.14) !important; }
+html[data-theme="dark"] .hover\:bg-red-100:hover { background-color: rgba(220, 38, 38, 0.22) !important; }
+html[data-theme="dark"] .divide-zinc-100 > * + * { border-color: #1e2c30 !important; }
+/* Yorqin rangli tugmalar tunda biroz yumshatiladi — ko'z charchamasligi uchun */
+html[data-theme="dark"] .bg-teal-600 { background-color: #0f9488 !important; }
+html[data-theme="dark"] .hover\:bg-teal-700:hover { background-color: #0d7d73 !important; }
+html[data-theme="dark"] .bg-red-600 { background-color: #dc4c4c !important; }
+html[data-theme="dark"] .shadow-teal-600\/30 { --tw-shadow-color: rgba(15, 148, 136, 0.25); }
+html[data-theme="dark"] ::selection { background: #134e4a; color: #99f6e4; }
+html[data-theme="dark"] .text-zinc-800 { color: #eef4f5 !important; }
+
+/* Tunda muhim tugmalarni ajratish:
+   asosiy (teal) — OQ ramka, ikkilamchi muhim (sariq/amber) — SARIQ ramka, chiqish — QIZIL */
+html[data-theme="dark"] .bg-teal-600,
+html[data-theme="dark"] .bg-teal-700 {
+  border: 1.5px solid #ffffff !important;
+}
+html[data-theme="dark"] .bg-amber-500,
+html[data-theme="dark"] .bg-amber-600 {
+  border: 1.5px solid #fbbf24 !important;
+}
+html[data-theme="dark"] .border-teal-600 { border-color: #ffffff !important; color: #ffffff; }
+html[data-theme="dark"] .text-teal-700 { color: #5eead4 !important; }
+html[data-theme="dark"] .text-red-600,
+html[data-theme="dark"] .text-red-700 { color: #f87171 !important; }
+html[data-theme="dark"] .border-red-200,
+html[data-theme="dark"] .border-red-300 { border-color: #f87171 !important; }
+
+/* Gorizontal lentalar uchun: skroll bor, ko'rsatkichi yashirin */
+.sg-noscroll { scrollbar-width: none; -ms-overflow-style: none; }
+.sg-noscroll::-webkit-scrollbar { display: none; }

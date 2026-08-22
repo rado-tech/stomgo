@@ -39,3 +39,37 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+PAROLLAR-MAXFIY.txt
+
+# ============ StomGo ============
+# Foydalanuvchi yuklagan rasmlar (shaxsiy ma'lumot bo'lishi mumkin)
+/uploads/
+
+# Yig'ilgan ilova va yordamchi ikkiliklar (katta, git uchun emas)
+StomGo.apk
+*.apk
+*.aab
+/tools/cloudflared.exe
+
+# React Native / Android
+/mobile/node_modules
+/mobile/.expo
+/mobile/android/.gradle
+/mobile/android/build
+/mobile/android/app/build
+/mobile/android/app/.cxx
+/mobile/android/local.properties
+/mobile/android/app/debug.keystore
+/mobile/android/app/release.keystore
+/mobile/ios/Pods
+*.keystore
+*.jks
+
+# Vaqtinchalik sinov skriptlari
+/scripts/_*.ts
+
+# Eski SQLite bazasi (PostgreSQL'ga o'tishdan oldingi) — shaxsiy ma'lumot bo'lishi mumkin
+*.db
+*.db-journal
+*.sqlite
+*.sqlite3

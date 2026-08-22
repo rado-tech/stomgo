@@ -1,0 +1,324 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id             String   @id @default(cuid())
+  phone          String   @unique
+  name           String?
+  birthYear      Int?
+  gender         String? // MALE | FEMALE (ixtiyoriy)
+  role           String   @default("PATIENT") // PATIENT | CLINIC | ADMIN
+  clinicId       String?  // CLINIC roli uchun
+  username       String?  @unique // CLINIC/ADMIN uchun login
+  passwordHash   String? // CLINIC/ADMIN uchun parol (bcrypt)
+  photoUrl       String? // bemor rasmi (ixtiyoriy)
+  telegramChatId String?  // bemor botga ulangan bo'lsa
+  tgLinkCode     String?  @unique
+  createdAt      DateTime @default(now())
+
+  appointments  Appointment[]
+  reviews       Review[]
+  triages       TriageSession[]
+  notifications Notification[]
+  conversations Conversation[]
+  clinic        Clinic?  @relation(fields: [clinicId], references: [id])
+  devices       Device[]
+}
+
+/// Push bildirishnoma uchun qurilma tokeni. Bir foydalanuvchida bir nechta qurilma bo'lishi mumkin.
+model Device {
+  id        String   @id @default(cuid())
+  userId    String
+  token     String   @unique // Expo push token yoki Web Push endpoint
+  kind      String   @default("EXPO") // EXPO | WEB
+  platform  String   @default("") // android | ios | web
+  // Web Push uchun shifrlash kalitlari (EXPO uchun bo'sh)
+  p256dh    String   @default("")
+  auth      String   @default("")
+  failCount Int      @default(0) // ketma-ket muvaffaqiyatsiz urinishlar
+  createdAt DateTime @default(now())
+  usedAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model OtpCode {
+  id        String    @id @default(cuid())
+  phone     String
+  code      String
+  attempts  Int       @default(0)
+  channel   String    @default("SCREEN") // TELEGRAM | TG_LINK | SMS | SCREEN
+  tgToken   String?   @unique // bot orqali tasdiqlash havolasi uchun
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([phone, createdAt])
+}
+
+model Clinic {
+  id              String    @id @default(cuid())
+  slug            String    @unique
+  name            String
+  description     String    @default("")
+  address         String
+  district        String
+  lat             Float
+  lng             Float
+  phone           String
+  workingHours    String // JSON: {mon:[["09:00","18:00"]],...}
+  is247           Boolean   @default(false)
+  emergency       Boolean   @default(false)
+  childFriendly   Boolean   @default(false)
+  showDoctors     Boolean   @default(true)
+  verifiedAt      DateTime?
+  infoConfirmedAt DateTime  @default(now())
+  tier            String    @default("FREE") // FREE | STANDARD | PREMIUM
+  tierEndsAt      DateTime?
+  rating          Float     @default(0)
+  reviewCount     Int       @default(0)
+  responseRate    Float     @default(1)
+  avgResponseMin  Int       @default(10)
+  checkinCode     String    @default("0000")
+  qrToken         String?   @unique // resepshndagi QR: /checkin/<qrToken>
+  coverHue        Int       @default(200)
+  photoUrl        String? // klinika rasmi (majburiy — panelda ogohlantiriladi)
+  telegramUsername String? // ESKIRGAN (v1.7): klinika bilan muloqot faqat ilova ichida — bu maydon UI da ishlatilmaydi
+  telegramChatId  String?   // klinika guruhi/chati botga ulangan bo'lsa
+  tgLinkCode      String?   @unique
+  createdAt       DateTime  @default(now())
+
+  users        User[]
+  doctors      Doctor[]
+  services     ClinicService[]
+  appointments Appointment[]
+  reviews      Review[]
+  promoSlots    PromoSlot[]
+  events        Event[]
+  photos        ClinicPhoto[]
+  conversations Conversation[]
+}
+
+model ServiceCatalog {
+  id       String  @id @default(cuid())
+  code     String  @unique
+  name     String
+  category String
+  clinicId String? // null = umumiy katalog; qiymat = o'sha klinikaning maxsus xizmati
+
+  clinicServices ClinicService[]
+
+  @@index([clinicId])
+}
+
+model ClinicService {
+  id        String @id @default(cuid())
+  clinicId  String
+  serviceId String
+  priceMin  Int
+  priceMax  Int
+
+  clinic  Clinic         @relation(fields: [clinicId], references: [id])
+  service ServiceCatalog @relation(fields: [serviceId], references: [id])
+
+  @@unique([clinicId, serviceId])
+}
+
+model Doctor {
+  id              String   @id @default(cuid())
+  clinicId        String
+  name            String
+  gender          String   @default("MALE") // MALE | FEMALE
+  specialty       String
+  experienceYears Int
+  education       String   @default("")
+  licenseNo       String   @default("")
+  verification    String   @default("REGISTERED") // REGISTERED | CLINIC_CONFIRMED | DOC_VERIFIED
+  isPublic        Boolean  @default(true)
+  photoUrl        String? // shifokor rasmi (ixtiyoriy)
+  createdAt       DateTime @default(now())
+
+  clinic       Clinic        @relation(fields: [clinicId], references: [id])
+  appointments Appointment[]
+}
+
+model Appointment {
+  id           String    @id @default(cuid())
+  userId       String
+  clinicId     String
+  doctorId     String?
+  serviceCode  String?
+  requestedAt  DateTime
+  altAt        DateTime?
+  status       String    @default("PENDING") // PENDING | CONFIRMED | ALT_OFFERED | REJECTED | CANCELLED | ARRIVED | NO_SHOW | DONE
+  rescheduleCount Int    @default(0) // bemor necha marta vaqtni ko'chirgan (suiiste'molga qarshi)
+  note         String    @default("")
+  rejectReason String    @default("")
+  code         String
+  source       String    @default("APP") // APP | TRIAGE
+  reminded24   Boolean   @default(false)
+  reminded2    Boolean   @default(false)
+  reviewAsked  Boolean   @default(false) // botdagi "baholang" so'rovi yuborilganmi
+  createdAt    DateTime  @default(now())
+  respondedAt  DateTime?
+  arrivedAt    DateTime?
+
+  user   User    @relation(fields: [userId], references: [id])
+  clinic Clinic  @relation(fields: [clinicId], references: [id])
+  doctor Doctor? @relation(fields: [doctorId], references: [id])
+  review Review?
+
+  @@index([clinicId, status])
+  @@index([status, requestedAt])
+}
+
+model Review {
+  id            String   @id @default(cuid())
+  appointmentId String   @unique
+  userId        String
+  clinicId      String
+  rating        Int
+  waitTime      Int?
+  attitude      Int?
+  priceMatch    Int?
+  text          String   @default("")
+  reply         String   @default("")
+  status        String   @default("PENDING") // PENDING | APPROVED | REJECTED
+  createdAt     DateTime @default(now())
+
+  appointment Appointment @relation(fields: [appointmentId], references: [id])
+  user        User        @relation(fields: [userId], references: [id])
+  clinic      Clinic      @relation(fields: [clinicId], references: [id])
+}
+
+model TriageSession {
+  id          String   @id @default(cuid())
+  userId      String?
+  answers     String
+  freeText    String   @default("")
+  urgency     String
+  specialty   String
+  priceMin    Int      @default(0)
+  priceMax    Int      @default(0)
+  explanation String   @default("")
+  aiUsed      Boolean  @default(false)
+  createdAt   DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+}
+
+model PromoSlot {
+  id        String   @id @default(cuid())
+  clinicId  String
+  position  Int
+  startsAt  DateTime
+  endsAt    DateTime
+  createdAt DateTime @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+}
+
+model Event {
+  id        String   @id @default(cuid())
+  clinicId  String?
+  userId    String?
+  type      String
+  meta      String   @default("{}")
+  createdAt DateTime @default(now())
+
+  clinic Clinic? @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId, type, createdAt])
+}
+
+// Klinika foto galereyasi (asosiy rasm Clinic.photoUrl da, qolganlari shu yerda)
+model ClinicPhoto {
+  id        String   @id @default(cuid())
+  clinicId  String
+  url       String
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+
+  clinic Clinic @relation(fields: [clinicId], references: [id])
+
+  @@index([clinicId, order])
+}
+
+// Bildirishnoma markazi (bemor uchun)
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String // APT_CONFIRMED | APT_REJECTED | APT_ALT | REVIEW_APPROVED | PREVENTIVE | INFO
+  title     String
+  body      String    @default("")
+  link      String    @default("") // ilova/sayt ichidagi yo'l
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId, createdAt])
+}
+
+/**
+ * Ilova ichidagi suhbat.
+ * type = CLINIC  → bemor ↔ klinika
+ * type = SUPPORT → bemor ↔ qo'llab-quvvatlash (admin)
+ * Barcha muloqot platforma ichida qoladi — tashqi kelishuvlarga javobgarlik yo'q.
+ */
+model Conversation {
+  id            String   @id @default(cuid())
+  type          String   @default("CLINIC") // CLINIC | SUPPORT
+  userId        String
+  clinicId      String?
+  lastMessageAt DateTime @default(now())
+  userReadAt    DateTime @default(now()) // bemor oxirgi marta o'qigan vaqt
+  staffReadAt   DateTime @default(now()) // klinika/admin oxirgi marta o'qigan vaqt
+  createdAt     DateTime @default(now())
+
+  user     User      @relation(fields: [userId], references: [id])
+  clinic   Clinic?   @relation(fields: [clinicId], references: [id])
+  messages Message[]
+
+  @@unique([userId, clinicId, type])
+  @@index([clinicId, lastMessageAt])
+  @@index([userId, lastMessageAt])
+}
+
+model Message {
+  id             String   @id @default(cuid())
+  conversationId String
+  senderRole     String // PATIENT | CLINIC | SUPPORT | SYSTEM
+  senderName     String   @default("")
+  body           String
+  imageUrl       String? // tish rasmi va h.k. (sharp orqali webp'ga qayta kodlangan)
+  createdAt      DateTime @default(now())
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+}
+
+// Barcha muhim harakatlar jurnali (admin ko'radi)
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String? // kim qildi (User.id; tizim bo'lsa null)
+  actorRole String   @default("SYSTEM") // PATIENT | CLINIC | ADMIN | SYSTEM | BOT
+  actorName String   @default("")
+  action    String // masalan: LOGIN, CLINIC_CREATE, APT_CONFIRM, REVIEW_APPROVE ...
+  entity    String   @default("") // Clinic | Appointment | Review | Doctor | User ...
+  entityId  String   @default("")
+  meta      String   @default("{}")
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([action, createdAt])
+}
