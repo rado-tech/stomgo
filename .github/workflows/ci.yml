@@ -95,7 +95,9 @@ jobs:
       DATABASE_URL: postgresql://stomgo:stomgo_ci@localhost:5432/stomgo?schema=public
       AUTH_SECRET: ci-uchun-uzun-tasodifiy-satr-kamida-32-belgi
       E2E_BASE: http://127.0.0.1:3000
-      NODE_ENV: production
+      # DIQQAT: bu yerda NODE_ENV=production QO'YILMAYDI — u holda `npm ci`
+      # dev paketlarni (tsx, prisma CLI) o'rnatmaydi. `next start` o'zi
+      # production rejimda ishlaydi.
 
     steps:
       - uses: actions/checkout@v4
