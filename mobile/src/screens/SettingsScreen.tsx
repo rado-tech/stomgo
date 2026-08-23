@@ -7,6 +7,7 @@ import { api, getBaseUrl, setBaseUrl, setToken, getToken } from "../api";
 import { C, useTheme, type ThemeMode } from "../theme";
 import { Sheet, Btn, BackButton, type IconName } from "../components/ui";
 import { unregisterPush } from "../push";
+import { useT, LOCALES, LOCALE_NAMES } from "../i18n";
 
 /**
  * Sozlamalar — to'liq ekran (pastdan chiqadigan oyna emas).
@@ -49,6 +50,7 @@ export default function SettingsScreen({ navigation }: {
   navigation: { goBack: () => void; navigate: (s: string, p?: object) => void };
 }) {
   const insets = useSafeAreaInsets();
+  const { t, locale, setLocale } = useT();
   const { mode, setMode } = useTheme();
 
   const [langOpen, setLangOpen] = useState(false);
@@ -166,7 +168,7 @@ export default function SettingsScreen({ navigation }: {
         )}
 
         <Group>
-          <Row icon="globe-outline" label="Til" value="O'zbekcha" onPress={() => setLangOpen(true)} />
+          <Row icon="globe-outline" label={t("profile.language")} value={LOCALE_NAMES[locale]} onPress={() => setLangOpen(true)} />
           <Row icon="moon-outline" label="Mavzu" value={modeLabel} onPress={() => setThemeOpen(true)} last />
         </Group>
 
@@ -209,22 +211,25 @@ export default function SettingsScreen({ navigation }: {
       </ScrollView>
 
       {/* Til */}
-      <Sheet open={langOpen} onClose={() => setLangOpen(false)} title="Til">
-        {([["uz", "O'zbekcha", true], ["ru", "Русский", false], ["en", "English", false]] as const).map(
-          ([code, label, ready]) => (
-            <View key={code} style={{
-              flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-              paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line,
-            }}>
-              <Text style={{ fontSize: 15, fontWeight: ready ? "800" : "600", color: ready ? C.text : C.mut }}>
-                {label}
+      <Sheet open={langOpen} onClose={() => setLangOpen(false)} title={t("profile.language")}>
+        {LOCALES.map((code) => {
+          const active = locale === code;
+          return (
+            <Pressable
+              key={code}
+              onPress={() => { setLocale(code); setLangOpen(false); }}
+              style={{
+                flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+                paddingVertical: 14, borderBottomWidth: 1, borderBottomColor: C.line,
+              }}
+            >
+              <Text style={{ fontSize: 15, fontWeight: active ? "800" : "600", color: active ? C.text : C.mut }}>
+                {LOCALE_NAMES[code]}
               </Text>
-              {ready
-                ? <Ionicons name="checkmark-circle" size={20} color={C.brand} />
-                : <Text style={{ fontSize: 12.5, color: C.faint }}>tez orada</Text>}
-            </View>
-          )
-        )}
+              {active && <Ionicons name="checkmark-circle" size={20} color={C.brand} />}
+            </Pressable>
+          );
+        })}
       </Sheet>
 
       {/* Mavzu */}

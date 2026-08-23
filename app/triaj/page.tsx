@@ -8,6 +8,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import { fmtPrice, fmtKm, SPECIALTY_LABELS } from "@/lib/format";
+import { useT } from "@/components/I18nProvider";
 
 type Result = {
   urgency: "EMERGENCY" | "TODAY" | "SOON" | "ROUTINE";
@@ -57,6 +58,7 @@ const URGENCY_UI = {
 };
 
 export default function TriagePage() {
+  const { t } = useT();
   const geo = useGeo();
   const [step, setStep] = useState(0);
   const [problem, setProblem] = useState<string | null>(null);
@@ -127,7 +129,7 @@ export default function TriagePage() {
 
         {result.clinics.length > 0 && (
           <div className="mt-5">
-            <h2 className="mb-2 font-bold">{result.urgency === "EMERGENCY" || result.urgency === "TODAY" ? "Hozir qabul qiladigan yaqin klinikalar" : "Mos klinikalar"}</h2>
+            <h2 className="mb-2 font-bold">{result.urgency === "EMERGENCY" || result.urgency === "TODAY" ? t("triage.nearbyOpen") : t("triage.matching")}</h2>
             <div className="space-y-2">
               {result.clinics.map((c) => (
                 <Link key={c.slug} href={`/klinika/${c.slug}`} className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3">
@@ -164,7 +166,7 @@ export default function TriagePage() {
     <TopNav />
     <div className="mx-auto min-h-dvh w-full max-w-md px-4 pb-24 pt-6 md:max-w-2xl md:pb-12 md:pt-8">
       <div className="flex items-center justify-between">
-        <h1 className="text-xl font-extrabold">AI maslahat</h1>
+        <h1 className="text-xl font-extrabold">{t("triage.title")}</h1>
         <span className="md:hidden"><ThemeToggle /></span>
       </div>
       <p className="mt-1 text-[13.5px] text-zinc-500">

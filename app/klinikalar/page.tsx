@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { api, useGeo } from "@/lib/client";
 import { Stars, Badge, Cover, EmptyState, Chip } from "@/components/ui";
+import { useT } from "@/components/I18nProvider";
 import ThemeToggle from "@/components/ThemeToggle";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
@@ -17,6 +18,7 @@ const SORTS = [
 
 /** Barcha klinikalar katalogi */
 export default function ClinicsPage() {
+  const { t } = useT();
   const geo = useGeo();
   const [items, setItems] = useState<ClinicListItem[] | null>(null);
   const [q, setQ] = useState("");
@@ -47,7 +49,7 @@ export default function ClinicsPage() {
     <div className="mx-auto min-h-dvh w-full max-w-6xl pb-24 md:px-6 md:pb-12 md:pt-5">
       <header className="rounded-b-3xl bg-white px-4 pb-4 pt-6 shadow-sm md:rounded-2xl md:px-6 md:pt-5 md:shadow-none md:ring-1 md:ring-zinc-100">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-extrabold">Klinikalar</h1>
+          <h1 className="text-2xl font-extrabold">{t("nav.clinics")}</h1>
           <span className="md:hidden"><ThemeToggle /></span>
         </div>
 
@@ -57,7 +59,7 @@ export default function ClinicsPage() {
           </svg>
           <input
             value={q} onChange={(e) => setQ(e.target.value)}
-            placeholder="Klinika nomini kiriting"
+            placeholder={t("clinics.searchPlaceholder")}
             className="w-full bg-transparent text-[14px] outline-none placeholder:text-zinc-400"
           />
         </div>
@@ -73,7 +75,7 @@ export default function ClinicsPage() {
         {!items ? (
           <div className="space-y-3">{[1, 2, 3, 4].map((i) => <div key={i} className="sg-skeleton h-20" />)}</div>
         ) : items.length === 0 ? (
-          <EmptyState icon="🏥" title="Klinika topilmadi" subtitle="Boshqa nom bilan qidirib ko'ring" />
+          <EmptyState icon="🏥" title={t("clinics.notFound")} subtitle={t("clinics.notFoundHint")} />
         ) : (
           <>
             <p className="mb-3 text-[13.5px] text-zinc-500">{items.length} ta klinika</p>

@@ -7,9 +7,11 @@ import { api } from "@/lib/client";
 import { Spinner } from "@/components/ui";
 import ThemeToggle from "@/components/ThemeToggle";
 import PasswordReset from "@/components/PasswordReset";
+import { useT, LanguageSwitch } from "@/components/I18nProvider";
 import { safeNext, insidePanel } from "@/lib/navigation";
 
 function LoginForm() {
+  const { t } = useT();
   const router = useRouter();
   const sp = useSearchParams();
   const next = safeNext(sp.get("next") ?? "");
@@ -75,7 +77,7 @@ function LoginForm() {
 
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col justify-center px-6 pb-20">
-      <div className="mb-4 flex justify-end"><ThemeToggle /></div>
+      <div className="mb-4 flex items-center justify-end gap-2"><LanguageSwitch /><ThemeToggle /></div>
       <Link href="/" className="mb-6 flex items-center justify-center gap-2">
         <svg width="40" height="40" viewBox="0 0 512 512"><rect width="512" height="512" rx="112" fill="#0f766e"/><path d="M256 96c-38 0-52 22-88 22-40 0-72 30-72 76 0 34 12 60 26 88 16 32 22 64 28 106 4 28 10 36 22 36 14 0 20-10 24-34 6-38 14-70 30-70h60c16 0 24 32 30 70 4 24 10 34 24 34 12 0 18-8 22-36 6-42 12-74 28-106 14-28 26-54 26-88 0-46-32-76-72-76-36 0-50-22-88-22z" fill="#fff"/></svg>
         <span className="text-2xl font-extrabold text-teal-800">StomGo</span>
@@ -105,7 +107,7 @@ function LoginForm() {
         />
       ) : mode === "staff" ? (
         <>
-          <h1 className="text-center text-xl font-bold">Xodimlar kirishi</h1>
+          <h1 className="text-center text-xl font-bold">{t("auth.staffLogin")}</h1>
           <p className="mt-1 text-center text-[13.5px] text-zinc-500">Login va parolni administratsiya beradi</p>
           {notice && (
             <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2.5 text-center text-[13px] font-medium text-emerald-800">
@@ -140,13 +142,13 @@ function LoginForm() {
             onClick={() => { setResetting(true); setError(""); }}
             className="mt-3 w-full py-2 text-center text-[13px] font-semibold text-teal-700"
           >
-            Parolni unutdingizmi?
+            {t("auth.forgotPassword")}
           </button>
         </>
       ) : step === "phone" ? (
         <>
-          <h1 className="text-center text-xl font-bold">Kirish yoki ro&apos;yxatdan o&apos;tish</h1>
-          <p className="mt-1 text-center text-[13.5px] text-zinc-500">Telefon raqamingizga tasdiqlash kodi yuboriladi</p>
+          <h1 className="text-center text-xl font-bold">{t("auth.title")}</h1>
+          <p className="mt-1 text-center text-[13.5px] text-zinc-500">{t("auth.subtitle")}</p>
           <div className="mt-5 flex items-center gap-2 rounded-2xl border border-zinc-200 bg-white px-4 py-3">
             <span className="font-semibold text-zinc-500">+998</span>
             <input

@@ -7,6 +7,7 @@ import { api, useGeo, useUser } from "@/lib/client";
 import { Stars, Badge, Cover, Spinner, Sheet, Toast } from "@/components/ui";
 import RouteSheet from "@/components/RouteSheet";
 import BottomNav from "@/components/BottomNav";
+import { useT } from "@/components/I18nProvider";
 import { fmtKm, fmtPrice, SPECIALTY_LABELS, VERIFICATION_LABELS, fmtDate } from "@/lib/format";
 
 type Detail = {
@@ -29,6 +30,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 export default function ClinicPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { t } = useT();
   const { slug } = use(params);
   const geo = useGeo();
   const router = useRouter();
@@ -229,7 +231,7 @@ export default function ClinicPage({ params }: { params: Promise<{ slug: string 
             className="flex items-center justify-center gap-2 rounded-xl border border-zinc-300 py-2.5 text-[14px] font-semibold text-zinc-700"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 21s-7-5.3-7-11a7 7 0 0114 0c0 5.7-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>
-            Marshrut
+            {t("clinic.route")}
           </button>
         </div>
         <p className="mt-2 text-[11.5px] leading-relaxed text-zinc-400">
@@ -239,7 +241,7 @@ export default function ClinicPage({ params }: { params: Promise<{ slug: string 
 
         {/* Xizmatlar va narxlar */}
         <section className="mt-6">
-          <h2 className="mb-2 font-bold">Xizmatlar va narxlar</h2>
+          <h2 className="mb-2 font-bold">{t("clinic.services")}</h2>
           <div className="space-y-3 lg:columns-2 lg:gap-3 lg:space-y-0 [&>div]:lg:mb-3 [&>div]:lg:break-inside-avoid">
             {Object.entries(d.servicesByCategory).map(([cat, items]) => (
               <div key={cat} className="rounded-2xl border border-zinc-100 bg-white p-3">
@@ -259,7 +261,7 @@ export default function ClinicPage({ params }: { params: Promise<{ slug: string 
         {/* Shifokorlar */}
         {d.showDoctors && d.doctors.length > 0 && (
           <section className="mt-6">
-            <h2 className="mb-2 font-bold">Shifokorlar</h2>
+            <h2 className="mb-2 font-bold">{t("clinic.doctors")}</h2>
             <div className="space-y-2">
               {d.doctors.map((doc) => (
                 <div key={doc.id} className="flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-3">
@@ -299,7 +301,7 @@ export default function ClinicPage({ params }: { params: Promise<{ slug: string 
 
         {/* Sharhlar */}
         <section className="mt-6">
-          <h2 className="mb-2 font-bold">Sharhlar ({d.reviewCount})</h2>
+          <h2 className="mb-2 font-bold">{t("clinic.reviews")} ({d.reviewCount})</h2>
           {d.reviews.length === 0 ? (
             <p className="text-[13px] text-zinc-500">Hozircha sharh yo&apos;q.</p>
           ) : (
@@ -323,7 +325,7 @@ export default function ClinicPage({ params }: { params: Promise<{ slug: string 
               ))}
             </div>
           )}
-          <p className="mt-2 text-[12px] text-zinc-400">Sharhlar faqat tasdiqlangan tashrifdan keyin yoziladi.</p>
+          <p className="mt-2 text-[12px] text-zinc-400">{t("clinic.reviewsOnlyAfterVisit")}</p>
         </section>
       </div>
 
@@ -333,12 +335,12 @@ export default function ClinicPage({ params }: { params: Promise<{ slug: string 
           onClick={() => setBookOpen(true)}
           className="w-full rounded-2xl bg-teal-600 py-3.5 text-[15px] font-bold text-white shadow-lg shadow-teal-600/30 transition hover:bg-teal-700"
         >
-          Qabulga yozilish
+          {t("clinic.book")}
         </button>
       </div>
 
       {/* Yozilish oynasi */}
-      <Sheet open={bookOpen} onClose={() => { setBookOpen(false); setSuccess(null); }} title={success ? "So'rov yuborildi" : "Qabulga yozilish"}>
+      <Sheet open={bookOpen} onClose={() => { setBookOpen(false); setSuccess(null); }} title={success ? t("booking.success") : t("clinic.book")}>
         {success ? (
           <div className="text-center">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-emerald-100">

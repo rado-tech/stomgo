@@ -4,6 +4,7 @@ import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { NavigationContainer, DefaultTheme, type NavigationContainerRef } from "@react-navigation/native";
 import OfflineBanner from "./src/components/OfflineBanner";
+import { I18nProvider, useT } from "./src/i18n";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -50,6 +51,7 @@ function AiTabIcon({ focused }: { focused: boolean }) {
 
 function Tabs() {
   const insets = useSafeAreaInsets();
+  const { t } = useT();
   useTheme();
   return (
     <Tab.Navigator
@@ -87,11 +89,11 @@ function Tabs() {
         },
       })}
     >
-      <Tab.Screen name="Asosiy" component={HomeScreen} />
-      <Tab.Screen name="Klinikalar" component={ClinicsScreen} />
-      <Tab.Screen name="AI maslahat" component={TriajScreen} options={{ tabBarLabel: "AI" }} />
-      <Tab.Screen name="Xabarlar" component={ChatsScreen} />
-      <Tab.Screen name="Profil" component={ProfilScreen} />
+      <Tab.Screen name="Asosiy" component={HomeScreen} options={{ tabBarLabel: t("nav.home") }} />
+      <Tab.Screen name="Klinikalar" component={ClinicsScreen} options={{ tabBarLabel: t("nav.clinics") }} />
+      <Tab.Screen name="AI maslahat" component={TriajScreen} options={{ tabBarLabel: t("nav.ai") }} />
+      <Tab.Screen name="Xabarlar" component={ChatsScreen} options={{ tabBarLabel: t("nav.messages") }} />
+      <Tab.Screen name="Profil" component={ProfilScreen} options={{ tabBarLabel: t("nav.profile") }} />
     </Tab.Navigator>
   );
 }
@@ -153,9 +155,11 @@ function Root() {
 export default function App() {
   return (
     <SafeAreaProvider>
-      <ThemeProvider>
-        <Root />
-      </ThemeProvider>
+      <I18nProvider>
+        <ThemeProvider>
+          <Root />
+        </ThemeProvider>
+      </I18nProvider>
     </SafeAreaProvider>
   );
 }
