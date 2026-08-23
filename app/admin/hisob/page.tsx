@@ -13,6 +13,9 @@ import PhoneChange from "@/components/PhoneChange";
 export default function AdminAccountPage() {
   const { user, setUser } = useUser();
   const [step, setStep] = useState<"form" | "code">("form");
+  const [editName, setEditName] = useState(false);
+  const [nameDraft, setNameDraft] = useState("");
+  const [nameBusy, setNameBusy] = useState(false);
   const [form, setForm] = useState({ username: "", password: "", password2: "", currentPassword: "" });
   const [code, setCode] = useState("");
   const [busy, setBusy] = useState(false);
@@ -21,6 +24,22 @@ export default function AdminAccountPage() {
   const show = (msg: string, error?: boolean) => {
     setToast({ msg, error });
     setTimeout(() => setToast(null), 5000);
+  };
+
+  const saveName = async () => {
+    const value = nameDraft.trim();
+    if (!value) return show("Ism bo'sh bo'lmasin", true);
+    setNameBusy(true);
+    try {
+      await api("/api/me", { method: "PATCH", json: { name: value } });
+      if (user) setUser({ ...user, name: value });
+      setEditName(false);
+      show("Ism saqlandi");
+    } catch (e) {
+      show((e as Error).message, true);
+    } finally {
+      setNameBusy(false);
+    }
   };
 
   const start = async () => {
@@ -82,10 +101,38 @@ export default function AdminAccountPage() {
         <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-600 text-[18px] font-bold text-white">
           {(user?.name ?? user?.username ?? "A")[0].toUpperCase()}
         </span>
-        <div className="min-w-0">
-          <p className="truncate text-[15px] font-bold">{user?.name ?? "Administrator"}</p>
-          <p className="truncate font-mono text-[13px] text-zinc-500">{user?.username ?? "—"}</p>
+        <div className="min-w-0 flex-1">
+          {editName ? (
+            <div className="flex items-center gap-2">
+              <input
+                value={nameDraft} onChange={(e) => setNameDraft(e.target.value)} autoFocus maxLength={60}
+                onKeyDown={(e) => { if (e.key === "Enter") void saveName(); if (e.key === "Escape") setEditName(false); }}
+                className="w-full rounded-lg border border-zinc-200 px-2.5 py-1.5 text-[14px] outline-none focus:border-teal-500"
+              />
+              <button onClick={saveName} disabled={nameBusy}
+                className="shrink-0 rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-bold text-white disabled:opacity-40">
+                {nameBusy ? "..." : "Saqlash"}
+              </button>
+              <button onClick={() => setEditName(false)}
+                className="shrink-0 rounded-lg px-2 py-1.5 text-[12.5px] text-zinc-500">
+                Bekor
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="truncate text-[15px] font-bold">{user?.name ?? "Administrator"}</p>
+              <p className="truncate font-mono text-[13px] text-zinc-500">{user?.username ?? "—"}</p>
+            </>
+          )}
         </div>
+        {!editName && (
+          <button
+            onClick={() => { setNameDraft(user?.name ?? ""); setEditName(true); }}
+            className="shrink-0 rounded-xl border border-zinc-300 px-3.5 py-2 text-[12.5px] font-semibold text-zinc-700"
+          >
+            Tahrirlash
+          </button>
+        )}
       </div>
 
       <div className="mt-3">

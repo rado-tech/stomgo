@@ -115,6 +115,11 @@ export default function PhoneChange({
               Botda yangi raqamni tasdiqlang →
             </a>
           )}
+          {via === "sms" && (
+            <p className="mb-2 rounded-xl bg-zinc-50 px-3 py-2 text-center text-[13px] text-zinc-600">
+              Kod yangi raqamga SMS orqali yuborildi
+            </p>
+          )}
           {via === "screen" && devCode && (
             <p className="mb-2 rounded-xl bg-amber-50 px-3 py-2 text-center text-[13px] text-amber-800">
               Demo rejim: kod — <b className="font-mono">{devCode}</b>
