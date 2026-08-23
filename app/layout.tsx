@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SwRegister from "@/components/SwRegister";
+import { SITE_URL, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,6 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Nisbiy manzillar (og:image, canonical) shu asosda to'liq URL ga aylanadi
+  metadataBase: new URL(SITE_URL),
   title: {
     default: "StomGo — Toshkent stomatologiyalari",
     template: "%s | StomGo",
@@ -22,6 +25,26 @@ export const metadata: Metadata = {
     "Toshkentdagi stomatologiya klinikalari: xaritada toping, narxlarni solishtiring, onlayn yoziling. AI yordamchi shoshilinchlikni aniqlab beradi.",
   manifest: "/manifest.webmanifest",
   appleWebApp: { capable: true, statusBarStyle: "default", title: "StomGo" },
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "uz_UZ",
+    url: SITE_URL,
+  },
+};
+
+/** Bosh sahifada — qidiruv tizimi saytni tashkilot sifatida tanishi uchun */
+const SITE_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: SITE_NAME,
+  url: SITE_URL,
+  inLanguage: "uz",
+  potentialAction: {
+    "@type": "SearchAction",
+    target: { "@type": "EntryPoint", urlTemplate: `${SITE_URL}/klinikalar?q={search_term_string}` },
+    "query-input": "required name=search_term_string",
+  },
 };
 
 export const viewport: Viewport = {
@@ -35,6 +58,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="uz" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(SITE_JSON_LD) }}
+        />
         {/* Tema tanlovini birinchi chizishdan OLDIN qo'llash (miltillashni oldini oladi) */}
         <script
           dangerouslySetInnerHTML={{
