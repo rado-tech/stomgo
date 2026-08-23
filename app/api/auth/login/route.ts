@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await db.user.findUnique({ where: { username } });
-  if (user?.blockedAt) {
+  if (user?.blockedAt || user?.deletedAt) {
     return NextResponse.json({ error: "Hisobingiz bloklangan. Qo'llab-quvvatlash bilan bog'laning." }, { status: 403 });
   }
   if (!user?.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {

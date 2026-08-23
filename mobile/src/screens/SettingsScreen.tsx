@@ -84,6 +84,50 @@ export default function SettingsScreen({ navigation }: {
     ]);
   };
 
+  /**
+   * Hisobni o'chirish — Google Play talabi.
+   * Ikki bosqichli tasdiq: birinchisi nima bo'lishini tushuntiradi,
+   * ikkinchisi tasodifan bosishdan saqlaydi.
+   */
+  const deleteAccount = () => {
+    Alert.alert(
+      "Hisobni o'chirish",
+      [
+        "O'chadi: ismingiz, rasmingiz, Telegram ulanishi, barcha suhbatlar va bildirishnomalar.",
+        "",
+        "Anonim qoladi: qabul yozuvlari va sharhlaringiz — klinikalar statistikasi uchun. Ularda ismingiz ko'rinmaydi.",
+        "",
+        "Bu amalni qaytarib bo'lmaydi.",
+      ].join("\n"),
+      [
+        { text: "Bekor qilish", style: "cancel" },
+        {
+          text: "Davom etish",
+          style: "destructive",
+          onPress: () =>
+            Alert.alert("Ishonchingiz komilmi?", "Hisobingiz butunlay o'chiriladi.", [
+              { text: "Yo'q", style: "cancel" },
+              {
+                text: "Ha, o'chirilsin",
+                style: "destructive",
+                onPress: async () => {
+                  try {
+                    await api("/api/me", { method: "DELETE" });
+                    await unregisterPush().catch(() => {});
+                    await setToken(null);
+                    navigation.goBack();
+                    Alert.alert("O'chirildi", "Hisobingiz o'chirildi.");
+                  } catch (e) {
+                    Alert.alert("Xatolik", (e as Error).message);
+                  }
+                },
+              },
+            ]),
+        },
+      ],
+    );
+  };
+
   const saveServer = async () => {
     const v = serverUrl.trim().replace(/\/+$/, "");
     if (!/^https?:\/\/.+/.test(v)) {
@@ -145,6 +189,17 @@ export default function SettingsScreen({ navigation }: {
           >
             <Ionicons name="log-out-outline" size={20} color="#fff" />
             <Text style={{ fontSize: 16, fontWeight: "800", color: "#fff" }}>Chiqish</Text>
+          </Pressable>
+        )}
+
+        {authed && (
+          <Pressable
+            onPress={deleteAccount}
+            style={{ paddingVertical: 16, alignItems: "center" }}
+          >
+            <Text style={{ fontSize: 14, fontWeight: "700", color: C.red }}>
+              Hisobni o&apos;chirish
+            </Text>
           </Pressable>
         )}
 

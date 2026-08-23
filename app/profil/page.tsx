@@ -12,6 +12,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import PushSetup from "@/components/PushSetup";
+import DeleteAccount from "@/components/DeleteAccount";
 import { APPOINTMENT_STATUS, fmtDateTime } from "@/lib/format";
 
 type Apt = {
@@ -261,6 +262,12 @@ export default function ProfilePage() {
       <div className="mt-3">
         <PushSetup />
       </div>
+
+      {user.role === "PATIENT" && (
+        <div className="mt-6 border-t border-zinc-100 pt-4">
+          <DeleteAccount />
+        </div>
+      )}
       </aside>
 
       <section>

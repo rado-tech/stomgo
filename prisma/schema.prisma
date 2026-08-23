@@ -19,6 +19,8 @@ model User {
   passwordHash   String? // CLINIC/ADMIN uchun parol (bcrypt)
   photoUrl       String? // bemor rasmi (ixtiyoriy)
   blockedAt      DateTime? // admin bloklagan bo'lsa — kira olmaydi
+  deletedAt      DateTime? // foydalanuvchi o'zi hisobini o'chirgan: shaxsiy ma'lumot tozalangan,
+                           // yozuv/sharh tarixi klinika statistikasi uchun anonim qoladi
   telegramChatId String?  // bemor botga ulangan bo'lsa
   tgLinkCode     String?  @unique
   createdAt      DateTime @default(now())

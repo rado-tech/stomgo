@@ -34,6 +34,7 @@ const PROTECTED: [string, string][] = [
   ["GET", "/api/clinic/profile"],
   ["POST", "/api/clinic/book"],
   ["POST", "/api/me/phone"],
+  ["DELETE", "/api/me"],
   ["GET", "/api/notifications"],
   ["GET", "/api/appointments"],
   ["GET", "/api/chat"],
