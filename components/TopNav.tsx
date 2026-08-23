@@ -4,23 +4,26 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import ThemeToggle from "./ThemeToggle";
 import NotifBell from "./NotifBell";
+import { useT, LanguageSwitch } from "@/components/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n";
 
 /**
  * Kompyuter uchun yuqori navigatsiya (md dan boshlab ko'rinadi).
  * Telefonda o'rniga BottomNav ishlaydi.
  */
 
-const LINKS = [
-  { href: "/", label: "Asosiy", exact: true },
-  { href: "/klinikalar", label: "Klinikalar" },
-  { href: "/narxlar", label: "Narxlar" },
-  { href: "/triaj", label: "AI maslahat" },
-  { href: "/xabarlar", label: "Xabarlar" },
-  { href: "/profil", label: "Profil" },
+const LINKS: { href: string; key: TranslationKey; exact?: boolean }[] = [
+  { href: "/", key: "nav.home", exact: true },
+  { href: "/klinikalar", key: "nav.clinics" },
+  { href: "/narxlar", key: "nav.prices" },
+  { href: "/triaj", key: "nav.ai" },
+  { href: "/xabarlar", key: "nav.messages" },
+  { href: "/profil", key: "nav.profile" },
 ];
 
 export default function TopNav({ sticky = true }: { sticky?: boolean }) {
   const pathname = usePathname();
+  const { t } = useT();
 
   return (
     <header
@@ -47,7 +50,7 @@ export default function TopNav({ sticky = true }: { sticky?: boolean }) {
                   active ? "bg-teal-50 text-teal-800" : "text-zinc-600 hover:bg-zinc-100"
                 }`}
               >
-                {l.label}
+                {t(l.key)}
               </Link>
             );
           })}
@@ -55,6 +58,7 @@ export default function TopNav({ sticky = true }: { sticky?: boolean }) {
 
         <div className="ml-auto flex items-center gap-1.5">
           <NotifBell />
+          <LanguageSwitch />
           <ThemeToggle />
         </div>
       </div>

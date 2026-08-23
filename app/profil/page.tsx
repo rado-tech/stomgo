@@ -13,6 +13,7 @@ import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import PushSetup from "@/components/PushSetup";
 import DeleteAccount from "@/components/DeleteAccount";
+import { useT, LanguageRows, useStatusLabel } from "@/components/I18nProvider";
 import { APPOINTMENT_STATUS, fmtDateTime } from "@/lib/format";
 
 type Apt = {
@@ -25,6 +26,8 @@ type Apt = {
 };
 
 export default function ProfilePage() {
+  const { t } = useT();
+  const statusLabel = useStatusLabel();
   const { user, loading: userLoading, setUser } = useUser();
   const router = useRouter();
   const [items, setItems] = useState<(Apt & { overdue: boolean })[] | null>(null);
@@ -241,10 +244,10 @@ export default function ProfilePage() {
         <div className="flex shrink-0 flex-col items-end gap-1.5">
           <span className="md:hidden"><ThemeToggle /></span>
           <button onClick={openEdit} className="rounded-xl border border-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-teal-700">
-            Tahrirlash
+            {t("common.edit")}
           </button>
           <button onClick={logout} className="rounded-xl border border-zinc-200 px-3 py-1.5 text-[12.5px] font-semibold text-zinc-600">
-            Chiqish
+            {t("profile.logout")}
           </button>
         </div>
       </div>
@@ -263,6 +266,11 @@ export default function ProfilePage() {
         <PushSetup />
       </div>
 
+      <div className="mt-3 rounded-2xl border border-zinc-100 bg-white p-4">
+        <p className="mb-2 text-[14px] font-bold">{t("profile.language")}</p>
+        <LanguageRows />
+      </div>
+
       {user.role === "PATIENT" && (
         <div className="mt-6 border-t border-zinc-100 pt-4">
           <DeleteAccount />
@@ -271,11 +279,11 @@ export default function ProfilePage() {
       </aside>
 
       <section>
-      <h2 className="mb-2 font-bold lg:mt-1 lg:text-lg">Yozuvlarim</h2>
+      <h2 className="mb-2 font-bold lg:mt-1 lg:text-lg">{t("profile.myBookings")}</h2>
       {!items ? (
         <div className="space-y-3">{[1, 2].map((i) => <div key={i} className="sg-skeleton h-28" />)}</div>
       ) : items.length === 0 ? (
-        <EmptyState icon="📅" title="Yozuvlar yo'q" subtitle="Klinika tanlab qabulga yoziling" />
+        <EmptyState icon="📅" title={t("profile.noBookings")} subtitle={t("profile.noBookingsHint")} />
       ) : (
         <div className="space-y-3">
           {items.map((a) => {
@@ -289,7 +297,7 @@ export default function ProfilePage() {
                     <Link href={`/klinika/${a.clinic.slug}`} className="truncate font-semibold">{a.clinic.name}</Link>
                     <p className="text-[12.5px] text-zinc-500">{fmtDateTime(a.requestedAt)}{a.doctor ? ` · ${a.doctor.name}` : ""}</p>
                   </div>
-                  <Badge color={st?.color}>{st?.label}</Badge>
+                  <Badge color={st?.color}>{statusLabel(a.status)}</Badge>
                 </div>
 
                 {a.status === "ALT_OFFERED" && a.altAt && (

@@ -4,19 +4,21 @@ import Link from "next/link";
 import { Cover } from "./ui";
 import { fmtKm, fmtPrice } from "@/lib/format";
 import type { ClinicListItem } from "@/app/api/clinics/route";
+import { useT } from "@/components/I18nProvider";
 
 /**
  * VIP e'lonlar — pullik joylashuvdagi klinikalar lentasi.
  * Faqat ro'yxat tartibiga ta'sir qiladi; AI tavsiyalari bunga bog'liq emas.
  */
 export default function VipStrip({ items }: { items: ClinicListItem[] }) {
+  const { t } = useT();
   if (items.length === 0) return null;
 
   return (
     <section className="mb-4">
       <div className="mb-2 flex items-center justify-between">
-        <h2 className="text-[15px] font-extrabold text-zinc-900">VIP e&apos;lonlar</h2>
-        <span className="text-[11.5px] text-zinc-400">Reklama</span>
+        <h2 className="text-[15px] font-extrabold text-zinc-900">{t("home.vip")}</h2>
+        <span className="text-[11.5px] text-zinc-400">{t("home.ad")}</span>
       </div>
 
       <div className="sg-noscroll -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">

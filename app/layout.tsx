@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SwRegister from "@/components/SwRegister";
 import OfflineBanner from "@/components/OfflineBanner";
+import I18nProvider from "@/components/I18nProvider";
+import { cookies, headers } from "next/headers";
+import { LOCALE_KEY, normalizeLocale, guessLocale } from "@/lib/i18n";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
@@ -55,9 +58,17 @@ export const viewport: Viewport = {
   maximumScale: 1,
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Til cookie'dan — birinchi chizishda to'g'ri bo'lsin, matn miltillamasin.
+  // Cookie yo'q bo'lsa brauzer tilidan taxmin qilamiz.
+  const store = await cookies();
+  const h = await headers();
+  const locale = store.get(LOCALE_KEY)?.value
+    ? normalizeLocale(store.get(LOCALE_KEY)?.value)
+    : guessLocale(h.get("accept-language"));
+
   return (
-    <html lang="uz" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
+    <html lang={locale} className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <script
           type="application/ld+json"
@@ -69,9 +80,11 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             __html: `try{if(localStorage.getItem("sg_theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`,
           }}
         />
-        <OfflineBanner />
-        <SwRegister />
-        {children}
+        <I18nProvider initial={locale}>
+          <OfflineBanner />
+          <SwRegister />
+          {children}
+        </I18nProvider>
       </body>
     </html>
   );

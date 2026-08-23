@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useT } from "@/components/I18nProvider";
 
 /** Brauzerning ulanish holatiga obuna — React uchun tashqi manba */
 function subscribe(onChange: () => void) {
@@ -22,6 +23,7 @@ const getServerSnapshot = () => true;
  * shunda foydalanuvchi qayta urinish mumkinligini biladi.
  */
 export default function OfflineBanner() {
+  const { t } = useT();
   const online = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
   const [restored, setRestored] = useState(false);
   const wasOffline = useRef(false);
@@ -60,9 +62,7 @@ export default function OfflineBanner() {
         online ? "bg-emerald-600" : "bg-zinc-800"
       }`}
     >
-      {online
-        ? "Ulanish tiklandi"
-        : "Internet yo'q — ba'zi ma'lumotlar yangilanmasligi mumkin"}
+      {online ? t("error.restored") : t("error.offline")}
     </div>
   );
 }

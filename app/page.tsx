@@ -12,22 +12,30 @@ import NotifBell from "@/components/NotifBell";
 import BottomNav from "@/components/BottomNav";
 import type { ClinicListItem } from "@/app/api/clinics/route";
 import SiteFooter from "@/components/SiteFooter";
+import { useT, LanguageSwitch } from "@/components/I18nProvider";
+import type { TranslationKey } from "@/lib/i18n";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
-const SERVICES = [
-  ["", "Barcha xizmatlar"], ["konsultatsiya", "Konsultatsiya"], ["plomba", "Plomba"],
-  ["kanal", "Kanal davolash"], ["tozalash", "Tozalash"], ["oqartirish", "Oqartirish"],
-  ["olib_tashlash", "Tish olib tashlash"], ["akl_tishi", "Aql tishi"], ["implant", "Implant"],
-  ["koronka", "Koronka"], ["protez", "Protez"], ["breket", "Breket"],
-  ["vinir", "Vinir"], ["bolalar_davolash", "Bolalar davolash"],
+/** Kod -> tarjima kaliti. Nomlar lug'atda (lib/i18n) turadi. */
+const SERVICES: readonly (readonly [string, TranslationKey])[] = [
+  ["", "home.allServices"],
+  ["konsultatsiya", "service.konsultatsiya"], ["plomba", "service.plomba"],
+  ["kanal", "service.kanal"], ["tozalash", "service.tozalash"],
+  ["oqartirish", "service.oqartirish"], ["olib_tashlash", "service.olib_tashlash"],
+  ["akl_tishi", "service.akl_tishi"], ["implant", "service.implant"],
+  ["koronka", "service.koronka"], ["protez", "service.protez"],
+  ["breket", "service.breket"], ["vinir", "service.vinir"],
+  ["bolalar_davolash", "service.bolalar_davolash"],
 ] as const;
 
-const SORTS = [
-  ["mix", "Aralash (tavsiya)"], ["distance", "Yaqinlik"], ["rating", "Reyting"], ["price", "Narx"],
+const SORTS: readonly (readonly [string, TranslationKey])[] = [
+  ["mix", "home.sortMix"], ["distance", "home.sortDistance"],
+  ["rating", "home.sortRating"], ["price", "home.sortPrice"],
 ] as const;
 
 export default function HomePage() {
+  const { t } = useT();
   const geo = useGeo();
   const [view, setView] = useState<"list" | "map">("list");
   const [data, setData] = useState<{ promos: ClinicListItem[]; list: ClinicListItem[] } | null>(null);
@@ -73,7 +81,7 @@ export default function HomePage() {
   const listContent = loading && !data ? (
     <div className="space-y-3">{[1, 2, 3, 4].map((i) => <div key={i} className="sg-skeleton h-32" />)}</div>
   ) : all.length === 0 ? (
-    <EmptyState icon="🔍" title="Hech narsa topilmadi" subtitle="Filtrlarni o'zgartirib ko'ring" />
+    <EmptyState icon="🔍" title={t("home.nothingFound")} subtitle={t("home.changeFilters")} />
   ) : (
     <div>
       <VipStrip items={data?.promos ?? []} />
@@ -107,37 +115,38 @@ export default function HomePage() {
               <input
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Klinika yoki tuman qidiring..."
+                placeholder={t("home.searchPlaceholder")}
                 className="w-full bg-transparent text-[14.5px] outline-none placeholder:text-zinc-400"
               />
             </div>
 
             <div className="ml-auto flex items-center gap-1.5">
               <NotifBell />
+              <LanguageSwitch className="hidden md:inline-flex" />
               <ThemeToggle />
               <button
                 onClick={() => { setFlags((f) => ({ ...f, urgent: !f.urgent })); setView("list"); }}
                 className={`rounded-full px-3.5 py-2 text-[13px] font-semibold transition ${flags.urgent ? "bg-red-600 text-white" : "bg-red-50 text-red-700 hover:bg-red-100"}`}
               >
-                Og&apos;riyaptimi?
+                {t("home.urgent")}
               </button>
               <button
                 onClick={() => setView(view === "list" ? "map" : "list")}
                 className="rounded-full bg-zinc-100 px-3.5 py-2 text-[13px] font-semibold text-zinc-700 hover:bg-zinc-200 md:hidden"
               >
-                {view === "list" ? "Xarita" : "Ro'yxat"}
+                {view === "list" ? t("home.map") : t("home.list")}
               </button>
               <Link href="/klinikalar" className="hidden rounded-full bg-zinc-100 px-3.5 py-2 text-[13px] font-semibold text-zinc-700 hover:bg-zinc-200 md:block">
-                Klinikalar
+                {t("nav.clinics")}
               </Link>
               <Link href="/triaj" className="hidden rounded-full bg-zinc-100 px-3.5 py-2 text-[13px] font-semibold text-zinc-700 hover:bg-zinc-200 md:block">
-                AI maslahat
+                {t("nav.ai")}
               </Link>
               <Link href="/xabarlar" className="hidden rounded-full bg-zinc-100 px-3.5 py-2 text-[13px] font-semibold text-zinc-700 hover:bg-zinc-200 md:block">
-                Xabarlar
+                {t("nav.messages")}
               </Link>
               <Link href="/profil" className="hidden rounded-full bg-zinc-100 px-3.5 py-2 text-[13px] font-semibold text-zinc-700 hover:bg-zinc-200 md:block">
-                Profil
+                {t("nav.profile")}
               </Link>
             </div>
           </div>
@@ -148,7 +157,7 @@ export default function HomePage() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Klinika yoki tuman qidiring..."
+              placeholder={t("home.searchPlaceholder")}
               className="w-full bg-transparent text-[14px] outline-none placeholder:text-zinc-400"
             />
           </div>
@@ -156,14 +165,14 @@ export default function HomePage() {
           {/* Filtr chiplari */}
           <div className="scrollbar-none -mx-4 mt-2.5 flex gap-1.5 overflow-x-auto px-4 pb-1">
             <Chip active={!!service} onClick={() => setSheetOpen("service")}>
-              {service ? SERVICES.find(([c]) => c === service)?.[1] : "Xizmat"} ▾
+              {service ? t(SERVICES.find(([c]) => c === service)?.[1] ?? "home.service") : t("home.service")} ▾
             </Chip>
             <Chip active={sort !== "mix"} onClick={() => setSheetOpen("sort")}>
-              {SORTS.find(([c]) => c === sort)?.[1]} ▾
+              {t(SORTS.find(([c]) => c === sort)?.[1] ?? "home.sortMix")} ▾
             </Chip>
-            <Chip active={flags.openNow} onClick={() => toggle("openNow")}>Hozir ochiq</Chip>
-            <Chip active={flags.female} onClick={() => toggle("female")}>Ayol shifokor</Chip>
-            <Chip active={flags.child} onClick={() => toggle("child")}>Bolalar</Chip>
+            <Chip active={flags.openNow} onClick={() => toggle("openNow")}>{t("home.openNow")}</Chip>
+            <Chip active={flags.female} onClick={() => toggle("female")}>{t("home.femaleDoctor")}</Chip>
+            <Chip active={flags.child} onClick={() => toggle("child")}>{t("home.children")}</Chip>
             <Chip active={flags.night} onClick={() => toggle("night")}>24/7</Chip>
           </div>
 
@@ -193,33 +202,33 @@ export default function HomePage() {
       </div>
 
       {/* Xizmat tanlash */}
-      <Sheet open={sheetOpen === "service"} onClose={() => setSheetOpen(null)} title="Xizmat turi">
+      <Sheet open={sheetOpen === "service"} onClose={() => setSheetOpen(null)} title={t("home.serviceType")}>
         <div className="grid grid-cols-2 gap-2">
-          {SERVICES.map(([code, label]) => (
+          {SERVICES.map(([code, key]) => (
             <button
               key={code}
               onClick={() => { setService(code); setSheetOpen(null); }}
               className={`rounded-xl border px-3 py-2.5 text-left text-[13px] font-medium ${service === code ? "border-teal-600 bg-teal-50 text-teal-800" : "border-zinc-200"}`}
             >
-              {label}
+              {t(key)}
             </button>
           ))}
         </div>
-        <p className="mt-3 text-[12px] text-zinc-500">Xizmat tanlansa, har bir klinikada o&apos;sha xizmat narxi ko&apos;rsatiladi va narx bo&apos;yicha saralash mumkin bo&apos;ladi.</p>
+        <p className="mt-3 text-[12px] text-zinc-500">{t("home.serviceHint")}</p>
       </Sheet>
 
       {/* Saralash */}
-      <Sheet open={sheetOpen === "sort"} onClose={() => setSheetOpen(null)} title="Saralash">
+      <Sheet open={sheetOpen === "sort"} onClose={() => setSheetOpen(null)} title={t("home.sort")}>
         <div className="space-y-2">
-          {SORTS.map(([code, label]) => (
+          {SORTS.map(([code, key]) => (
             <button
               key={code}
               onClick={() => { setSort(code); setSheetOpen(null); }}
               className={`block w-full rounded-xl border px-4 py-3 text-left text-[14px] font-medium ${sort === code ? "border-teal-600 bg-teal-50 text-teal-800" : "border-zinc-200"}`}
             >
-              {label}
-              {code === "mix" && <span className="block text-[12px] font-normal text-zinc-500">Yaqinlik + reyting + javob berish tezligi</span>}
-              {code === "price" && <span className="block text-[12px] font-normal text-zinc-500">Xizmat tanlangan bo&apos;lsa — o&apos;sha xizmat narxi bo&apos;yicha</span>}
+              {t(key)}
+              {code === "mix" && <span className="block text-[12px] font-normal text-zinc-500">{t("home.sortMixHint")}</span>}
+              {code === "price" && <span className="block text-[12px] font-normal text-zinc-500">{t("home.sortPriceHint")}</span>}
             </button>
           ))}
         </div>
