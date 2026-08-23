@@ -4,7 +4,7 @@
 
 | Nima | Qayerda |
 |---|---|
-| Sayt (istalgan qurilma) | **https://propose-mime-session-removing.trycloudflare.com** |
+| Sayt (istalgan qurilma) | **https://nova-roberts-trout-soonest.trycloudflare.com** |
 | Android ilova | **`StomGo.apk`** (38 MB) — zamonaviy telefonlar uchun |
 | Eski telefonlar | `StomGo-eski-telefonlar.apk` (30 MB) — asosiysi o'rnatilmasa shuni sinang |
 | Telegram bot | **@finaybot** |
