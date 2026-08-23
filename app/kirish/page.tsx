@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api } from "@/lib/client";
 import { Spinner } from "@/components/ui";
 import ThemeToggle from "@/components/ThemeToggle";
+import PasswordReset from "@/components/PasswordReset";
 import { safeNext, insidePanel } from "@/lib/navigation";
 
 function LoginForm() {
@@ -14,6 +15,8 @@ function LoginForm() {
   const next = safeNext(sp.get("next") ?? "");
 
   const [mode, setMode] = useState<"patient" | "staff">("patient");
+  const [resetting, setResetting] = useState(false);
+  const [notice, setNotice] = useState("");
   const [step, setStep] = useState<"phone" | "code">("phone");
   const [phone, setPhone] = useState("");
   const [name, setName] = useState("");
@@ -89,10 +92,26 @@ function LoginForm() {
         </button>
       </div>
 
-      {mode === "staff" ? (
+      {resetting ? (
+        <PasswordReset
+          initialUsername={username}
+          onCancel={() => setResetting(false)}
+          onDone={() => {
+            setResetting(false);
+            setPassword("");
+            setError("");
+            setNotice("Parol yangilandi. Yangi parol bilan kiring.");
+          }}
+        />
+      ) : mode === "staff" ? (
         <>
           <h1 className="text-center text-xl font-bold">Xodimlar kirishi</h1>
           <p className="mt-1 text-center text-[13.5px] text-zinc-500">Login va parolni administratsiya beradi</p>
+          {notice && (
+            <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2.5 text-center text-[13px] font-medium text-emerald-800">
+              {notice}
+            </p>
+          )}
           <input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
@@ -116,6 +135,12 @@ function LoginForm() {
             className="mt-4 flex items-center justify-center rounded-2xl bg-teal-600 py-3.5 font-bold text-white disabled:opacity-40"
           >
             {loading ? <Spinner className="border-white" /> : "Kirish"}
+          </button>
+          <button
+            onClick={() => { setResetting(true); setError(""); }}
+            className="mt-3 w-full py-2 text-center text-[13px] font-semibold text-teal-700"
+          >
+            Parolni unutdingizmi?
           </button>
         </>
       ) : step === "phone" ? (
