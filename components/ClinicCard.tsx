@@ -42,6 +42,22 @@ export default function ClinicCard({ c }: { c: ClinicListItem }) {
         {c.infoStale && <Badge color="zinc">Ma&apos;lumot eskirgan</Badge>}
       </div>
 
+      {/* Eng yaqin bo'sh vaqt va javob tezligi — bemorning "qachon kira olaman"
+          va "javob berishadimi" degan savollariga darhol javob */}
+      <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[12.5px]">
+        {c.nextSlot && (
+          <span className="font-semibold text-emerald-700">
+            Bo&apos;sh vaqt: {c.nextSlot.label} {c.nextSlot.time}
+          </span>
+        )}
+        {c.avgResponseMin > 0 && (
+          <span className="text-zinc-500">
+            ~{c.avgResponseMin} daq ichida javob
+            {c.responseRate >= 0.5 && ` · ${Math.round(c.responseRate * 100)}%`}
+          </span>
+        )}
+      </div>
+
       {c.filteredService ? (
         <p className="mt-2 text-[13px]">
           <span className="text-zinc-500">{c.filteredService.name}:</span>{" "}

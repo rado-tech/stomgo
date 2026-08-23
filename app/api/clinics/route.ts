@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { haversineKm, mixScore, TASHKENT_CENTER } from "@/lib/geo";
-import { isOpenNow, todayHoursLabel } from "@/lib/hours";
+import { isOpenNow, todayHoursLabel, nextFreeSlot } from "@/lib/hours";
 
 export type ClinicListItem = {
   id: string; slug: string; name: string; district: string; address: string;
@@ -12,6 +12,11 @@ export type ClinicListItem = {
   coverHue: number; photoUrl: string | null; consultPrice: number | null;
   filteredService: { name: string; priceMin: number; priceMax: number } | null;
   infoStale: boolean;
+  /** Eng yaqin bo'sh vaqt: "Bugun 15:00" ko'rinishida ko'rsatiladi */
+  nextSlot: { date: string; label: string; time: string } | null;
+  /** Klinika odatda necha daqiqada javob beradi va necha foiz so'rovga javob bergan */
+  avgResponseMin: number;
+  responseRate: number;
 };
 
 export async function GET(req: NextRequest) {
@@ -26,7 +31,14 @@ export async function GET(req: NextRequest) {
   const child = sp.get("child") === "1";
   const emergency = sp.get("emergency") === "1";
   const night = sp.get("night") === "1";
-  const urgent = sp.get("urgent") === "1"; // "Hozir og'riyapti" rejimi
+  // "Hozir og'riyapti" rejimi.
+  // MUHIM: "shoshilinch" va "bo'sh vaqt bor" bir xil narsa emas.
+  //  - emergency/24/7 — klinikaning xossasi: o'tkir og'riqli bemorni navbatsiz oladi
+  //  - nextSlot       — jadvaldagi navbatdagi bo'sh vaqt
+  // Og'rigan odamga ikkalasi ham to'g'ri keladi, shuning uchun bu rejimda
+  // ikkalasini BIRLASHTIRAMIZ: hozir ochiq VA (shoshilinch qabul qiladi YOKI
+  // bugun bo'sh vaqti bor).
+  const urgent = sp.get("urgent") === "1";
   const maxPrice = parseInt(sp.get("maxPrice") ?? "", 10) || 0;
   const minRating = parseFloat(sp.get("minRating") ?? "") || 0;
 
@@ -62,6 +74,9 @@ export async function GET(req: NextRequest) {
         ? { name: filtered.service.name, priceMin: filtered.priceMin, priceMax: filtered.priceMax }
         : null,
       infoStale: c.infoConfirmedAt.getTime() < staleThreshold,
+      nextSlot: nextFreeSlot(c.workingHours),
+      avgResponseMin: c.avgResponseMin,
+      responseRate: c.responseRate,
       _score: 0, _responseRate: c.responseRate,
     } as ClinicListItem & { _score: number; _responseRate: number };
   });
@@ -72,7 +87,10 @@ export async function GET(req: NextRequest) {
   if (openNow || urgent) items = items.filter((i) => i.isOpen);
   if (female) items = items.filter((i) => i.hasFemaleDoctor);
   if (child) items = items.filter((i) => i.childFriendly);
-  if (emergency || urgent) items = items.filter((i) => i.emergency || i.is247);
+  if (emergency) items = items.filter((i) => i.emergency || i.is247);
+  if (urgent) {
+    items = items.filter((i) => i.emergency || i.is247 || i.nextSlot?.label === "Bugun");
+  }
   if (night) items = items.filter((i) => i.is247);
   if (minRating) items = items.filter((i) => i.rating >= minRating);
   if (maxPrice && service) items = items.filter((i) => (i.filteredService?.priceMin ?? 0) <= maxPrice);
@@ -81,7 +99,12 @@ export async function GET(req: NextRequest) {
   const withScore = items as (ClinicListItem & { _score: number; _responseRate: number })[];
   for (const i of withScore) i._score = mixScore(i.distanceKm, i.rating, i._responseRate);
 
-  if (urgent || sort === "distance") withScore.sort((a, b) => a.distanceKm - b.distanceKm);
+  if (urgent) {
+    // Og'riyotgan odamga: avval bugun qabul qiladiganlar, keyin eng yaqini
+    const todayFirst = (x: ClinicListItem) =>
+      x.is247 ? 0 : x.nextSlot?.label === "Bugun" ? 1 : x.emergency ? 2 : 3;
+    withScore.sort((a, b) => todayFirst(a) - todayFirst(b) || a.distanceKm - b.distanceKm);
+  } else if (sort === "distance") withScore.sort((a, b) => a.distanceKm - b.distanceKm);
   else if (sort === "rating") withScore.sort((a, b) => b.rating - a.rating || a.distanceKm - b.distanceKm);
   else if (sort === "price")
     withScore.sort(

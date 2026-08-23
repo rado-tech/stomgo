@@ -13,6 +13,7 @@ import NotifBell from "./NotifBell";
 const LINKS = [
   { href: "/", label: "Asosiy", exact: true },
   { href: "/klinikalar", label: "Klinikalar" },
+  { href: "/narxlar", label: "Narxlar" },
   { href: "/triaj", label: "AI maslahat" },
   { href: "/xabarlar", label: "Xabarlar" },
   { href: "/profil", label: "Profil" },

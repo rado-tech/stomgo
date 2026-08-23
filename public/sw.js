@@ -1,5 +1,5 @@
 /* StomGo service worker — PWA uchun */
-const CACHE = "stomgo-v1";
+const CACHE = "stomgo-v3";
 const SHELL = ["/", "/triaj", "/profil", "/manifest.webmanifest", "/icon.svg"];
 
 self.addEventListener("install", (e) => {
@@ -18,21 +18,50 @@ self.addEventListener("fetch", (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== "GET" || url.origin !== location.origin) return;
 
-  // API — doim tarmoqdan (eskirgan ma'lumot ko'rsatmaymiz)
+  // API va xarita plitkalari — doim tarmoqdan
   if (url.pathname.startsWith("/api/")) return;
 
-  // Sahifalar: network-first, offline'da cache
-  e.respondWith(
-    fetch(e.request)
-      .then((res) => {
-        if (res.ok && (url.pathname === "/" || url.pathname.startsWith("/_next/static"))) {
-          const copy = res.clone();
-          caches.open(CACHE).then((c) => c.put(e.request, copy));
-        }
-        return res;
-      })
-      .catch(() => caches.match(e.request).then((m) => m ?? caches.match("/")))
-  );
+  const isNavigation = e.request.mode === "navigate";
+  const isStatic = url.pathname.startsWith("/_next/static");
+
+  // MUHIM: JS/CSS so'roviga HECH QACHON HTML qaytarmaymiz.
+  // Avval shunday edi va tarmoq uzilganda brauzer
+  // "Failed to load module script: non-JavaScript MIME type text/html"
+  // xatosini berardi — natijada xarita moduli yuklanmay qolardi.
+  if (isStatic) {
+    e.respondWith(
+      caches.match(e.request).then(
+        (hit) =>
+          hit ??
+          fetch(e.request).then((res) => {
+            if (res.ok) {
+              const copy = res.clone();
+              caches.open(CACHE).then((c) => c.put(e.request, copy));
+            }
+            return res;
+          })
+      )
+    );
+    return;
+  }
+
+  // Sahifalar: network-first, oflaynda keshdan yoki bosh sahifa
+  if (isNavigation) {
+    e.respondWith(
+      fetch(e.request)
+        .then((res) => {
+          if (res.ok && url.pathname === "/") {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(e.request, copy));
+          }
+          return res;
+        })
+        .catch(() => caches.match(e.request).then((m) => m ?? caches.match("/")))
+    );
+    return;
+  }
+
+  // Qolganlari (rasm, shrift va h.k.) — tarmoqdan, zaxirasiz
 });
 
 /* ---------------- Push bildirishnoma ---------------- */

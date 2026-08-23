@@ -164,6 +164,26 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (s:
         {c.hasFemaleDoctor && <Badge label="Ayol shifokor" color={C.pink} bg={C.pinkBg} />}
         {c.childFriendly && <Badge label="Bolalar" color={C.violet} bg={C.violetBg} />}
       </View>
+      {/* Eng yaqin bo'sh vaqt va javob tezligi */}
+      {(!!c.nextSlot || c.avgResponseMin > 0) && (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 10, marginTop: 8 }}>
+          {!!c.nextSlot && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Ionicons name="calendar-outline" size={13} color={C.green} />
+              <Text style={{ fontSize: 12.5, fontWeight: "700", color: C.green }}>
+                {c.nextSlot.label} {c.nextSlot.time}
+              </Text>
+            </View>
+          )}
+          {c.avgResponseMin > 0 && (
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
+              <Ionicons name="flash-outline" size={13} color={C.mut} />
+              <Text style={{ fontSize: 12, color: C.mut }}>~{c.avgResponseMin} daq</Text>
+            </View>
+          )}
+        </View>
+      )}
+
       {c.filteredService && (
         <Text style={{ fontSize: 12.5, marginTop: 8, color: C.mut }}>
           {c.filteredService.name}:{" "}

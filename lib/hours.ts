@@ -102,3 +102,15 @@ export function generateSlots(whJson: string): { date: string; label: string; sl
   }
   return out;
 }
+
+/**
+ * Eng yaqin bo'sh vaqt — ro'yxat kartochkasida ko'rsatish uchun.
+ * generateSlots() ning birinchi natijasini oladi (u allaqachon o'tgan
+ * vaqtlarni chiqarib tashlaydi).
+ */
+export function nextFreeSlot(whJson: string): { date: string; label: string; time: string } | null {
+  const days = generateSlots(whJson);
+  const first = days.find((d) => d.slots.length > 0);
+  if (!first) return null;
+  return { date: first.date, label: first.label, time: first.slots[0] };
+}

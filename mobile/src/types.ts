@@ -7,6 +7,9 @@ export type ClinicListItem = {
   coverHue: number; photoUrl: string | null; consultPrice: number | null;
   filteredService: { name: string; priceMin: number; priceMax: number } | null;
   infoStale: boolean;
+  nextSlot: { date: string; label: string; time: string } | null;
+  avgResponseMin: number;
+  responseRate: number;
 };
 
 export type ClinicDetail = {

@@ -42,6 +42,7 @@ export default function MapView({
   const centerRef = useRef(center);
   const [locating, setLocating] = useState(false);
   const [noWebgl, setNoWebgl] = useState(false);
+  const [initError, setInitError] = useState("");
   const [ready, setReady] = useState(false);
 
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
@@ -69,13 +70,21 @@ export default function MapView({
     const createMap = () => {
       if (disposed || mapRef.current) return;
 
-      const map = new maplibregl.Map({
+      let map: maplibregl.Map;
+      try {
+        map = new maplibregl.Map({
         container: el,
         style: STYLE_URL,
         center: [centerRef.current.lng, centerRef.current.lat],
         zoom: 11.3,
-        attributionControl: { compact: true },
-      });
+          attributionControl: { compact: true },
+        });
+      } catch (e) {
+        // Xarita umuman yaratilmasa — bo'sh quti o'rniga sababni ko'rsatamiz
+        console.error("Xarita yaratilmadi:", e);
+        setInitError((e as Error)?.message ?? "noma'lum xato");
+        return;
+      }
       mapRef.current = map;
       map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
 
@@ -210,6 +219,19 @@ export default function MapView({
       goTo(center.lat, center.lng);
     }
   };
+
+  if (initError) {
+    return (
+      <div className="flex h-full w-full flex-col items-center justify-center gap-2 bg-zinc-50 px-6 text-center">
+        <p className="text-[14px] font-semibold text-zinc-700">Xarita yuklanmadi</p>
+        <p className="max-w-sm text-[12.5px] leading-relaxed text-zinc-500">
+          Sahifani yangilab ko&apos;ring (Ctrl+Shift+R). Takrorlansa — ro&apos;yxat
+          ko&apos;rinishidan foydalaning.
+        </p>
+        <code className="max-w-full truncate rounded bg-zinc-200 px-2 py-1 text-[11px] text-zinc-600">{initError}</code>
+      </div>
+    );
+  }
 
   if (noWebgl) {
     return (
