@@ -9,6 +9,7 @@ import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import { fmtKm } from "@/lib/format";
 import type { ClinicListItem } from "@/app/api/clinics/route";
+import SiteFooter from "@/components/SiteFooter";
 
 const SORTS = [
   ["mix", "Tavsiya"], ["rating", "Reyting"], ["distance", "Yaqinlik"], ["price", "Narx"],
@@ -99,6 +100,7 @@ export default function ClinicsPage() {
         )}
       </div>
 
+      <SiteFooter />
       <BottomNav />
     </div>
     </>

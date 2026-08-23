@@ -9,6 +9,7 @@ import { CATEGORY_LABELS } from "@/lib/categories";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import ThemeToggle from "@/components/ThemeToggle";
+import SiteFooter from "@/components/SiteFooter";
 
 type Item = {
   code: string; name: string; category: string;
@@ -98,6 +99,7 @@ export default function PricesPage() {
           )}
         </div>
       </div>
+      <SiteFooter />
       <BottomNav />
     </>
   );

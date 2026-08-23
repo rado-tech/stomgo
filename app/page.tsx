@@ -11,6 +11,7 @@ import ThemeToggle from "@/components/ThemeToggle";
 import NotifBell from "@/components/NotifBell";
 import BottomNav from "@/components/BottomNav";
 import type { ClinicListItem } from "@/app/api/clinics/route";
+import SiteFooter from "@/components/SiteFooter";
 
 const MapView = dynamic(() => import("@/components/MapView"), { ssr: false });
 
@@ -224,6 +225,7 @@ export default function HomePage() {
         </div>
       </Sheet>
 
+      <SiteFooter />
       <BottomNav />
     </div>
   );

@@ -21,6 +21,8 @@ const PROTECTED: [string, string][] = [
   ["GET", "/api/admin/doctors"],
   ["GET", "/api/admin/logs"],
   ["GET", "/api/admin/promo"],
+  ["GET", "/api/admin/applications"],
+  ["PATCH", "/api/admin/applications"],
   ["GET", "/api/admin/reviews"],
   ["GET", "/api/admin/services"],
   ["GET", "/api/admin/appointments"],

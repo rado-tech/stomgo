@@ -6,6 +6,7 @@ import TimeInput from "@/components/TimeInput";
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import { api } from "@/lib/client";
+import { DISTRICTS, isDistrict } from "@/lib/districts";
 import { Badge, Spinner, Toast } from "@/components/ui";
 import TelegramLink from "@/components/TelegramLink";
 import UploadButton from "@/components/UploadButton";
@@ -25,11 +26,6 @@ type Profile = {
 const DAYS: [string, string][] = [
   ["mon", "Dushanba"], ["tue", "Seshanba"], ["wed", "Chorshanba"], ["thu", "Payshanba"],
   ["fri", "Juma"], ["sat", "Shanba"], ["sun", "Yakshanba"],
-];
-
-const DISTRICTS = [
-  "Bektemir", "Chilonzor", "Mirobod", "Mirzo Ulug'bek", "Olmazor", "Sergeli",
-  "Shayxontohur", "Uchtepa", "Yakkasaroy", "Yashnobod", "Yunusobod", "Yangihayot",
 ];
 
 type GalleryPhoto = { id: string; url: string };
@@ -168,7 +164,7 @@ export default function SettingsPage() {
                 value={p.district} onChange={(e) => setP({ ...p, district: e.target.value })}
                 className="mt-1 w-full rounded-xl border border-zinc-200 px-3 py-2.5 text-[14px] text-zinc-900 outline-none"
               >
-                {!DISTRICTS.includes(p.district) && <option value={p.district}>{p.district}</option>}
+                {!isDistrict(p.district) && <option value={p.district}>{p.district}</option>}
                 {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
               </select>
             </label>

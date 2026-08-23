@@ -35,6 +35,7 @@ const GROUPS: { title: string; items: { href: string; label: string; icon: React
   {
     title: "Biznes",
     items: [
+      { href: "/admin/arizalar", label: "Klinika arizalari", icon: <Icon d="M4 4h16v12H5.2L4 17.5zM8 9h8M8 12.5h5" /> },
       { href: "/admin/promo", label: "Top joylashuv", icon: <Icon d="M12 2l2.9 6.3 6.6.8-4.9 4.5 1.3 6.6L12 17l-5.9 3.2 1.3-6.6L2.5 9.1l6.6-.8z" /> },
       { href: "/admin/loglar", label: "Jurnal", icon: <Icon d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M9 13h6M9 17h6" /> },
     ],

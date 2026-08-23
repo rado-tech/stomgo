@@ -56,6 +56,7 @@ export async function POST(req: NextRequest) {
   const district = String(body.district ?? "").trim().slice(0, 50);
   const address = String(body.address ?? "").trim().slice(0, 200);
   const phone = String(body.phone ?? "").trim().slice(0, 20);
+  const applicationId = String(body.applicationId ?? "").trim();
 
   if (!name || !district) {
     return NextResponse.json({ error: "Klinika nomi va tumani majburiy" }, { status: 400 });
@@ -95,10 +96,18 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  // Ariza asosida yaratilgan bo'lsa — arizani yopamiz va bog'laymiz
+  if (applicationId) {
+    await db.clinicApplication.updateMany({
+      where: { id: applicationId },
+      data: { status: "APPROVED", clinicId: clinic.id, reviewedAt: new Date() },
+    });
+  }
+
   audit({
     actorId: admin.id, actorRole: "ADMIN", actorName: admin.name ?? "Admin",
     action: "CLINIC_CREATE", entity: "Clinic", entityId: clinic.id,
-    meta: { name, username },
+    meta: { name, username, fromApplication: applicationId || undefined },
   });
 
   // Parol faqat shu javobda ko'rsatiladi — admin klinikaga yetkazadi

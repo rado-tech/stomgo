@@ -326,3 +326,25 @@ model AuditLog {
   @@index([createdAt])
   @@index([action, createdAt])
 }
+
+/// Klinika o'zi topshirgan hamkorlik arizasi.
+/// Admin ko'rib chiqadi va tasdiqlasa — shu ma'lumotdan klinika yaratiladi.
+model ClinicApplication {
+  id          String    @id @default(cuid())
+  clinicName  String
+  district    String
+  address     String    @default("")
+  phone       String
+  contactName String
+  telegram    String    @default("") // @username yoki qo'shimcha raqam
+  doctorCount Int       @default(0)
+  note        String    @default("")
+  status      String    @default("NEW") // NEW | CONTACTED | APPROVED | REJECTED
+  adminNote   String    @default("")
+  clinicId    String? // tasdiqlangach yaratilgan klinika
+  ip          String    @default("") // spam tahlili uchun
+  createdAt   DateTime  @default(now())
+  reviewedAt  DateTime?
+
+  @@index([status, createdAt])
+}
