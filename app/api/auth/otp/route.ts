@@ -4,6 +4,7 @@ import { normalizePhone } from "@/lib/phone";
 import { sendSms, smsConfigured } from "@/lib/sms";
 import { tgConfigured, tgSend } from "@/lib/telegram";
 import { rateLimit } from "@/lib/ratelimit";
+import { screenCodeAllowed, NO_CHANNEL_ERROR } from "@/lib/otp-channel";
 
 /**
  * Kirish kodi yuborish. Ustuvorlik:
@@ -74,6 +75,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: true, via: "sms" });
   }
 
-  // Faqat lokal ishlab chiqish rejimi
+  // Kodni ochiq qaytarish — faqat lokal ishlab chiqishda.
+  // Ishlab chiqarishda bu kirish himoyasini chetlab o'tish yo'li bo'lardi.
+  if (!screenCodeAllowed()) {
+    return NextResponse.json({ error: NO_CHANNEL_ERROR }, { status: 503 });
+  }
   return NextResponse.json({ ok: true, via: "screen", devCode: code });
 }

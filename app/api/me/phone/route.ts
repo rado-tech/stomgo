@@ -5,6 +5,7 @@ import { normalizePhone } from "@/lib/phone";
 import { sendSms, smsConfigured } from "@/lib/sms";
 import { tgConfigured } from "@/lib/telegram";
 import { rateLimit } from "@/lib/ratelimit";
+import { screenCodeAllowed, NO_CHANNEL_ERROR } from "@/lib/otp-channel";
 import { audit } from "@/lib/audit";
 
 /** Telefon raqamini almashtirish: yangi raqamga kod yuborish */
@@ -47,6 +48,9 @@ export async function POST(req: NextRequest) {
     const sent = await sendSms(newPhone, `StomGo kirish kodi: ${code}. Uni hech kimga bermang.`);
     if (!sent) return NextResponse.json({ error: "SMS yuborilmadi" }, { status: 502 });
     return NextResponse.json({ ok: true, via: "sms" });
+  }
+  if (!screenCodeAllowed()) {
+    return NextResponse.json({ error: NO_CHANNEL_ERROR }, { status: 503 });
   }
   return NextResponse.json({ ok: true, via: "screen", devCode: code });
 }
