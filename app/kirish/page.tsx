@@ -6,11 +6,12 @@ import Link from "next/link";
 import { api } from "@/lib/client";
 import { Spinner } from "@/components/ui";
 import ThemeToggle from "@/components/ThemeToggle";
+import { safeNext, insidePanel } from "@/lib/navigation";
 
 function LoginForm() {
   const router = useRouter();
   const sp = useSearchParams();
-  const next = sp.get("next") ?? "";
+  const next = safeNext(sp.get("next") ?? "");
 
   const [mode, setMode] = useState<"patient" | "staff">("patient");
   const [step, setStep] = useState<"phone" | "code">("phone");
@@ -60,7 +61,7 @@ function LoginForm() {
       const res = await api<{ redirect: string }>("/api/auth/login", { json: { username, password } });
       // Xodim login/parol bilan kirsa — DOIM o'z paneliga.
       // `next` faqat o'sha panel ichidagi sahifa bo'lsa hurmat qilinadi.
-      const inPanel = next && next.startsWith(res.redirect);
+      const inPanel = next !== "" && insidePanel(next, res.redirect);
       router.push(inPanel ? next : res.redirect);
       router.refresh();
     } catch (e) {
