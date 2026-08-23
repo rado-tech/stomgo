@@ -56,7 +56,7 @@ model OtpCode {
   phone     String
   code      String
   attempts  Int       @default(0)
-  channel   String    @default("SCREEN") // TELEGRAM | TG_LINK | SMS | SCREEN
+  channel   String    @default("SCREEN") // TELEGRAM | TG_LINK | SCREEN (SMS ataylab olib tashlangan)
   tgToken   String?   @unique // bot orqali tasdiqlash havolasi uchun
   expiresAt DateTime
   usedAt    DateTime?

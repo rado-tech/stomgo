@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { limitWrite } from "@/lib/ratelimit";
 import { requireUser, unauthorized } from "@/lib/auth";
 
 /** Qurilma tokenini ro'yxatdan o'tkazish (ilova va brauzer uchun) */
 export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return unauthorized();
+  const lim = limitWrite(`push:${user.id}`, 30, 60 * 60 * 1000);
+  if (lim) return lim;
 
   const b = await req.json().catch(() => ({}));
   const token = String(b.token ?? "").trim();
@@ -35,6 +38,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await requireUser();
   if (!user) return unauthorized();
+  const lim = limitWrite(`push:${user.id}`, 30, 60 * 60 * 1000);
+  if (lim) return lim;
   const b = await req.json().catch(() => ({}));
   const token = String(b.token ?? "");
   if (token) await db.device.deleteMany({ where: { token, userId: user.id } });
@@ -45,6 +50,8 @@ export async function DELETE(req: NextRequest) {
 export async function PUT() {
   const user = await requireUser();
   if (!user) return unauthorized();
+  const lim = limitWrite(`push:${user.id}`, 30, 60 * 60 * 1000);
+  if (lim) return lim;
   const { pushToUser } = await import("@/lib/push");
   const count = await db.device.count({ where: { userId: user.id } });
   if (count === 0) return NextResponse.json({ error: "Qurilma ro'yxatdan o'tmagan" }, { status: 400 });

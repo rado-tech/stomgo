@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
 import { requireRole, unauthorized, createSession, setSessionCookie } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { deleteImage } from "@/lib/uploads";
 import { TASHKENT_CENTER } from "@/lib/geo";
 
 export async function GET() {
@@ -233,7 +234,11 @@ export async function DELETE(req: NextRequest) {
 
   const clinic = await db.clinic.findUnique({
     where: { id },
-    include: { _count: { select: { appointments: true, reviews: true, doctors: true } } },
+    include: {
+      _count: { select: { appointments: true, reviews: true, doctors: true } },
+      photos: { select: { url: true } },
+      doctors: { select: { id: true, photoUrl: true } },
+    },
   });
   if (!clinic) return NextResponse.json({ error: "Klinika topilmadi" }, { status: 404 });
 
@@ -244,20 +249,55 @@ export async function DELETE(req: NextRequest) {
     );
   }
 
+  // Suhbatlardagi rasmlar ham diskdan ketishi kerak
+  const chatImages = await db.message.findMany({
+    where: { conversation: { clinicId: id }, imageUrl: { not: null } },
+    select: { imageUrl: true },
+  });
+
   await db.$transaction(async (tx) => {
+    // --- Shaxsiy va operatsion ma'lumot: butunlay o'chadi ---
     await tx.message.deleteMany({ where: { conversation: { clinicId: id } } });
     await tx.conversation.deleteMany({ where: { clinicId: id } });
-    await tx.review.deleteMany({ where: { clinicId: id } });
-    await tx.appointment.deleteMany({ where: { clinicId: id } });
-    await tx.clinicService.deleteMany({ where: { clinicId: id } });
-    await tx.serviceCatalog.deleteMany({ where: { clinicId: id } });
     await tx.clinicPhoto.deleteMany({ where: { clinicId: id } });
     await tx.promoSlot.deleteMany({ where: { clinicId: id } });
     await tx.event.deleteMany({ where: { clinicId: id } });
+    await tx.clinicService.deleteMany({ where: { clinicId: id } });
+    await tx.serviceCatalog.deleteMany({ where: { clinicId: id } });
+
+    // Shifokorlar o'chadi — avval yozuvlardagi havolani uzamiz
+    await tx.appointment.updateMany({ where: { clinicId: id }, data: { doctorId: null } });
     await tx.doctor.deleteMany({ where: { clinicId: id } });
+
+    // Xodim hisoblari — kirish imkoni darhol yopiladi
     await tx.user.deleteMany({ where: { clinicId: id, role: "CLINIC" } });
-    await tx.clinic.delete({ where: { id } });
+
+    // --- Klinika kartochkasi arxivga o'tadi ---
+    // Yozuvlar va sharhlar SAQLANADI: bemor o'z tarixini yo'qotmasligi kerak
+    // va statistika buzilmasligi kerak. Klinika hech qayerda ko'rinmaydi —
+    // deactivatedAt barcha ochiq ro'yxatlardan chiqarib tashlaydi.
+    await tx.clinic.update({
+      where: { id },
+      data: {
+        deactivatedAt: clinic.deactivatedAt ?? new Date(),
+        photoUrl: null,
+        phone: "",
+        description: "",
+        qrToken: null,
+        tier: "FREE",
+        tierEndsAt: null,
+      },
+    });
   });
+
+  // Bazadagi yozuvlar o'chgach — diskdagi fayllarni tozalaymiz
+  const files = [
+    clinic.photoUrl,
+    ...clinic.photos.map((ph) => ph.url),
+    ...clinic.doctors.map((d) => d.photoUrl),
+    ...chatImages.map((m) => m.imageUrl),
+  ];
+  await Promise.all(files.map((u) => deleteImage(u)));
 
   audit({
     actorId: admin.id, actorRole: "ADMIN", actorName: admin.name ?? "Admin",
@@ -267,6 +307,8 @@ export async function DELETE(req: NextRequest) {
       appointments: clinic._count.appointments,
       reviews: clinic._count.reviews,
       doctors: clinic._count.doctors,
+      filesDeleted: files.filter(Boolean).length,
+      note: "Yozuvlar va sharhlar tarix uchun saqlandi",
     },
   });
 

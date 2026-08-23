@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { limitWrite } from "@/lib/ratelimit";
 import { requireRole, unauthorized } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { CATEGORIES } from "@/lib/categories";
@@ -33,6 +34,8 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   const user = await requireRole("CLINIC");
   if (!user?.clinicId) return unauthorized();
+  const lim = limitWrite(`svc:${user.id}`, 60, 60 * 60 * 1000);
+  if (lim) return lim;
   const body = await req.json().catch(() => ({}));
   const items: { serviceId: string; enabled: boolean; priceMin: number; priceMax: number }[] =
     Array.isArray(body.services) ? body.services : [];
@@ -87,6 +90,8 @@ export async function PUT(req: NextRequest) {
 export async function POST(req: NextRequest) {
   const user = await requireRole("CLINIC");
   if (!user?.clinicId) return unauthorized();
+  const lim = limitWrite(`svc:${user.id}`, 60, 60 * 60 * 1000);
+  if (lim) return lim;
   const body = await req.json().catch(() => ({}));
 
   const name = String(body.name ?? "").trim().slice(0, 80);
@@ -149,6 +154,8 @@ export async function POST(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   const user = await requireRole("CLINIC");
   if (!user?.clinicId) return unauthorized();
+  const lim = limitWrite(`svc:${user.id}`, 60, 60 * 60 * 1000);
+  if (lim) return lim;
   const serviceId = req.nextUrl.searchParams.get("id") ?? "";
 
   const svc = await db.serviceCatalog.findFirst({ where: { id: serviceId, clinicId: user.clinicId } });

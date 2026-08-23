@@ -108,16 +108,24 @@ export default function AdminClinicsPage() {
 
   const remove = async (c: Clinic) => {
     const typed = prompt(
-      `"${c.name}" va uning BARCHA ma'lumotlari o'chiriladi:\n` +
-      `${c.appointments} yozuv, ${c.reviews} sharh, ${c.doctors} shifokor, suhbatlar va narxlar.\n\n` +
-      `Bu amalni qaytarib bo'lmaydi. Tasdiqlash uchun klinika nomini aynan yozing:`,
+      [
+        `"${c.name}" arxivga o'tkaziladi.`,
+        "",
+        `O'CHADI: ${c.doctors} shifokor, suhbatlar, narxlar va barcha rasmlar`,
+        "(diskdan ham), xodim hisoblari — klinika boshqa kira olmaydi.",
+        "",
+        `QOLADI: ${c.appointments} yozuv va ${c.reviews} sharh — bemorlar o'z`,
+        "tarixini yo'qotmasligi uchun. Klinika hech qanday ro'yxatda ko'rinmaydi.",
+        "",
+        "Bu amalni qaytarib bo'lmaydi. Tasdiqlash uchun klinika nomini aynan yozing:",
+      ].join("\n"),
       ""
     );
     if (typed === null) return;
     setBusy(c.id);
     try {
       await api(`/api/admin/clinics?id=${c.id}&confirm=${encodeURIComponent(typed)}`, { method: "DELETE" });
-      show("Klinika o'chirildi");
+      show("Klinika arxivga o'tkazildi");
       load();
     } catch (e) {
       show((e as Error).message, true);

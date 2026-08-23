@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { limitWrite } from "@/lib/ratelimit";
 import { requireRole, unauthorized } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 
@@ -23,6 +24,8 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   const user = await requireRole("CLINIC");
   if (!user?.clinicId) return unauthorized();
+  const lim = limitWrite(`crev:${user.id}`, 60, 60 * 60 * 1000);
+  if (lim) return lim;
   const body = await req.json().catch(() => ({}));
   const id = String(body.id ?? "");
   const reply = String(body.reply ?? "").slice(0, 500);

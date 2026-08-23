@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { normalizePhone } from "@/lib/phone";
-import { sendSms, smsConfigured } from "@/lib/sms";
 import { tgConfigured, tgSend } from "@/lib/telegram";
 import { rateLimit } from "@/lib/ratelimit";
 import { screenCodeAllowed, NO_CHANNEL_ERROR } from "@/lib/otp-channel";
@@ -11,8 +10,9 @@ import { screenCodeAllowed, NO_CHANNEL_ERROR } from "@/lib/otp-channel";
  *  1) TELEGRAM  — foydalanuvchi botga ulangan bo'lsa, kod botiga boradi (bepul)
  *  2) TG_LINK   — ulanmagan bo'lsa, botda raqamini tasdiqlash havolasi qaytadi;
  *                 bot raqam mosligini tekshirib, kodni o'sha yerda beradi
- *  3) SMS       — bot sozlanmagan, lekin Eskiz ulangan bo'lsa
- *  4) SCREEN    — hech biri yo'q (faqat lokal ishlab chiqish): kod ekranda
+ *  3) SCREEN    — bot butunlay sozlanmagan (FAQAT lokal ishlab chiqish)
+ *
+ * SMS kanali ataylab yo'q: kirish faqat Telegram bot orqali.
  */
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
@@ -66,14 +66,8 @@ export async function POST(req: NextRequest) {
   }
 
   await db.otpCode.create({
-    data: { phone, code, channel: smsConfigured() ? "SMS" : "SCREEN", expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
+    data: { phone, code, channel: "SCREEN", expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
   });
-
-  if (smsConfigured()) {
-    const sent = await sendSms(phone, `StomGo kirish kodi: ${code}. Uni hech kimga bermang.`);
-    if (!sent) return NextResponse.json({ error: "SMS yuborilmadi. Birozdan keyin qayta urining." }, { status: 502 });
-    return NextResponse.json({ ok: true, via: "sms" });
-  }
 
   // Kodni ochiq qaytarish — faqat lokal ishlab chiqishda.
   // Ishlab chiqarishda bu kirish himoyasini chetlab o'tish yo'li bo'lardi.

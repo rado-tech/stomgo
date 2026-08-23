@@ -172,9 +172,6 @@ function LoginForm() {
               <p className="mt-2 text-[12px] text-sky-700">Botdan kodni olgach, shu yerga qaytib kiriting.</p>
             </div>
           )}
-          {via === "sms" && (
-            <p className="mt-1 text-center text-[13.5px] text-zinc-500">+998 {phone} raqamiga SMS yuborildi</p>
-          )}
           {via === "screen" && devCode && (
             <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-center text-[13px] text-amber-800">
               Demo rejim: kod — <b className="font-mono text-[15px]">{devCode}</b>

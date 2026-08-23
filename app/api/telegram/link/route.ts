@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { limitWrite } from "@/lib/ratelimit";
 import { requireUser, unauthorized } from "@/lib/auth";
 import { tgConfigured } from "@/lib/telegram";
 import { audit } from "@/lib/audit";
@@ -47,6 +48,8 @@ export async function GET() {
 export async function DELETE() {
   const user = await requireUser();
   if (!user) return unauthorized();
+  const lim = limitWrite(`tglink:${user.id}`, 10, 60 * 60 * 1000);
+  if (lim) return lim;
   if (user.role === "CLINIC" && user.clinicId) {
     await db.clinic.update({ where: { id: user.clinicId }, data: { telegramChatId: null } });
   } else {

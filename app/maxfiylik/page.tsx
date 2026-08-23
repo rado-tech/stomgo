@@ -30,7 +30,7 @@ export default function PrivacyPage() {
 
       <h2 className="mt-5 font-bold text-zinc-900">3. Ma&apos;lumotlar nima uchun ishlatiladi</h2>
       <p>
-        Qabulga yozish va klinikaga uzatish, eslatmalar yuborish (SMS/Telegram), xizmat sifatini
+        Qabulga yozish va klinikaga uzatish, eslatmalar yuborish (Telegram va ilova bildirishnomalari), xizmat sifatini
         yaxshilash. Ma&apos;lumotlaringiz uchinchi shaxslarga sotilmaydi. Yozuv ma&apos;lumotlari faqat siz
         tanlagan klinikaga ko&apos;rsatiladi.
       </p>

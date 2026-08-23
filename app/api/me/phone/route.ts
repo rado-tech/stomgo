@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireUser } from "@/lib/auth";
 import { normalizePhone } from "@/lib/phone";
-import { sendSms, smsConfigured } from "@/lib/sms";
 import { tgConfigured } from "@/lib/telegram";
 import { rateLimit } from "@/lib/ratelimit";
 import { screenCodeAllowed, NO_CHANNEL_ERROR } from "@/lib/otp-channel";
@@ -41,14 +40,9 @@ export async function POST(req: NextRequest) {
   }
 
   await db.otpCode.create({
-    data: { phone: newPhone, code, channel: smsConfigured() ? "SMS" : "SCREEN", expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
+    data: { phone: newPhone, code, channel: "SCREEN", expiresAt: new Date(Date.now() + 5 * 60 * 1000) },
   });
 
-  if (smsConfigured()) {
-    const sent = await sendSms(newPhone, `StomGo kirish kodi: ${code}. Uni hech kimga bermang.`);
-    if (!sent) return NextResponse.json({ error: "SMS yuborilmadi" }, { status: 502 });
-    return NextResponse.json({ ok: true, via: "sms" });
-  }
   if (!screenCodeAllowed()) {
     return NextResponse.json({ error: NO_CHANNEL_ERROR }, { status: 503 });
   }
