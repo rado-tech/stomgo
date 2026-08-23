@@ -18,7 +18,7 @@
     "postinstall": "node scripts/copy-maplibre-worker.mjs",
     "test": "node --import tsx --test tests/*.test.ts",
     "test:e2e": "node --import tsx --test tests/*.e2e.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",
