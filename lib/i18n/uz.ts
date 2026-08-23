@@ -156,6 +156,18 @@ export const uz = {
   "clinics.notFound": "Klinika topilmadi",
   "clinics.notFoundHint": "Boshqa nom bilan qidirib ko'ring",
 
+  "settings.title": "Sozlamalar",
+  "settings.theme": "Mavzu",
+  "settings.themeLight": "Kunduzgi",
+  "settings.themeDark": "Tungi",
+  "settings.themeSystem": "Tizim bo'yicha",
+  "settings.verifyProfile": "Profilni tasdiqlash",
+  "settings.partnership": "Reklama va hamkorlik",
+  "settings.privacy": "Maxfiylik siyosati",
+  "settings.support": "Qo'llab-quvvatlash",
+  "settings.server": "Server sozlamasi",
+  "settings.logoutConfirm": "Hisobdan chiqmoqchimisiz?",
+
   // ---------- Xizmat nomlari ----------
   "service.konsultatsiya": "Konsultatsiya",
   "service.plomba": "Plomba",

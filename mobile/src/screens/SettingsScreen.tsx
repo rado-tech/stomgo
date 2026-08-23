@@ -73,10 +73,10 @@ export default function SettingsScreen({ navigation }: {
   }, []);
 
   const logout = () => {
-    Alert.alert("Chiqish", "Hisobdan chiqmoqchimisiz?", [
-      { text: "Bekor qilish", style: "cancel" },
+    Alert.alert(t("profile.logout"), t("settings.logoutConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Chiqish", style: "destructive",
+        text: t("profile.logout"), style: "destructive",
         onPress: async () => {
           await unregisterPush().catch(() => {});
           await setToken(null);
@@ -141,7 +141,7 @@ export default function SettingsScreen({ navigation }: {
     Alert.alert("Saqlandi", "Ilovani qayta ishga tushiring.");
   };
 
-  const modeLabel = mode === "light" ? "Kunduzgi" : mode === "dark" ? "Tungi" : "Tizim bo'yicha";
+  const modeLabel = mode === "light" ? t("settings.themeLight") : mode === "dark" ? t("settings.themeDark") : t("settings.themeSystem");
 
   const version = Constants.expoConfig?.version ?? "—";
   const build = Constants.expoConfig?.android?.versionCode ?? "";
@@ -154,14 +154,14 @@ export default function SettingsScreen({ navigation }: {
         paddingTop: insets.top + 10, paddingBottom: 16, paddingHorizontal: 16,
       }}>
         <BackButton onPress={() => navigation.goBack()} />
-        <Text style={{ fontSize: 24, fontWeight: "900", color: C.text }}>Sozlamalar</Text>
+        <Text style={{ fontSize: 24, fontWeight: "900", color: C.text }}>{t("settings.title")}</Text>
       </View>
 
       <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: insets.bottom + 30 }}>
         {authed && (
           <Group>
             <Row
-              icon="shield-checkmark" label="Profilni tasdiqlash" iconColor={C.sky} last
+              icon="shield-checkmark" label={t("settings.verifyProfile")} iconColor={C.sky} last
               onPress={() => void Linking.openURL(`https://t.me/${bot}`)}
             />
           </Group>
@@ -169,15 +169,15 @@ export default function SettingsScreen({ navigation }: {
 
         <Group>
           <Row icon="globe-outline" label={t("profile.language")} value={LOCALE_NAMES[locale]} onPress={() => setLangOpen(true)} />
-          <Row icon="moon-outline" label="Mavzu" value={modeLabel} onPress={() => setThemeOpen(true)} last />
+          <Row icon="moon-outline" label={t("settings.theme")} value={modeLabel} onPress={() => setThemeOpen(true)} last />
         </Group>
 
         <Group>
-          <Row icon="megaphone-outline" label="Reklama va hamkorlik" onPress={() => void openUrl("/oferta")} />
-          <Row icon="document-text-outline" label="Maxfiylik siyosati" onPress={() => void openUrl("/maxfiylik")} />
-          <Row icon="headset-outline" label="Qo'llab-quvvatlash"
+          <Row icon="megaphone-outline" label={t("settings.partnership")} onPress={() => void openUrl("/oferta")} />
+          <Row icon="document-text-outline" label={t("settings.privacy")} onPress={() => void openUrl("/maxfiylik")} />
+          <Row icon="headset-outline" label={t("settings.support")}
             onPress={() => navigation.navigate("Tabs", { screen: "Xabarlar" })} />
-          <Row icon="server-outline" label="Server sozlamasi" onPress={() => setServerOpen(true)} last />
+          <Row icon="server-outline" label={t("settings.server")} onPress={() => setServerOpen(true)} last />
         </Group>
 
         {authed && (
@@ -190,7 +190,7 @@ export default function SettingsScreen({ navigation }: {
             })}
           >
             <Ionicons name="log-out-outline" size={20} color="#fff" />
-            <Text style={{ fontSize: 16, fontWeight: "800", color: "#fff" }}>Chiqish</Text>
+            <Text style={{ fontSize: 16, fontWeight: "800", color: "#fff" }}>{t("profile.logout")}</Text>
           </Pressable>
         )}
 
@@ -200,7 +200,7 @@ export default function SettingsScreen({ navigation }: {
             style={{ paddingVertical: 16, alignItems: "center" }}
           >
             <Text style={{ fontSize: 14, fontWeight: "700", color: C.red }}>
-              Hisobni o&apos;chirish
+              {t("profile.deleteAccount")}
             </Text>
           </Pressable>
         )}
@@ -233,8 +233,8 @@ export default function SettingsScreen({ navigation }: {
       </Sheet>
 
       {/* Mavzu */}
-      <Sheet open={themeOpen} onClose={() => setThemeOpen(false)} title="Mavzu">
-        {([["light", "Kunduzgi", "sunny-outline"], ["dark", "Tungi", "moon-outline"], ["system", "Tizim bo'yicha", "phone-portrait-outline"]] as [ThemeMode, string, IconName][]).map(
+      <Sheet open={themeOpen} onClose={() => setThemeOpen(false)} title={t("settings.theme")}>
+        {([["light", t("settings.themeLight"), "sunny-outline"], ["dark", t("settings.themeDark"), "moon-outline"], ["system", t("settings.themeSystem"), "phone-portrait-outline"]] as [ThemeMode, string, IconName][]).map(
           ([m, label, icon]) => (
             <Pressable key={m} onPress={() => { setMode(m); setThemeOpen(false); }}
               style={{

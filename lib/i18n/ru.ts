@@ -157,6 +157,18 @@ export const ru: Record<keyof typeof uz, string> = {
   "clinics.notFound": "Клиника не найдена",
   "clinics.notFoundHint": "Попробуйте другое название",
 
+  "settings.title": "Настройки",
+  "settings.theme": "Тема",
+  "settings.themeLight": "Светлая",
+  "settings.themeDark": "Тёмная",
+  "settings.themeSystem": "Как в системе",
+  "settings.verifyProfile": "Подтвердить профиль",
+  "settings.partnership": "Реклама и партнёрство",
+  "settings.privacy": "Политика конфиденциальности",
+  "settings.support": "Поддержка",
+  "settings.server": "Настройка сервера",
+  "settings.logoutConfirm": "Выйти из аккаунта?",
+
   // ---------- Xizmat nomlari ----------
   "service.konsultatsiya": "Консультация",
   "service.plomba": "Пломба",
