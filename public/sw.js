@@ -1,67 +1,31 @@
-/* StomGo service worker — PWA uchun */
-const CACHE = "stomgo-v3";
-const SHELL = ["/", "/triaj", "/profil", "/manifest.webmanifest", "/icon.svg"];
+/* StomGo service worker — FAQAT push bildirishnoma uchun.
+ *
+ * Diqqat: bu yerda ataylab `fetch` tinglovchisi YO'Q.
+ * Avvalgi versiya oflayn kesh qilardi va tarmoq uzilganda so'rovga bosh sahifa
+ * HTML'ini zaxira qilib qaytarardi. JavaScript moduliga (masalan MapLibre'ning
+ * worker skriptiga) HTML kelsa brauzer uni rad etadi:
+ *   "Failed to load module script: non-JavaScript MIME type text/html"
+ * Natijada xaritaning vektor qatlamlari chizilmasdi — faqat fon ko'rinardi.
+ *
+ * Oflayn rejim keyinroq, ehtiyotkorlik bilan qaytariladi. Hozir to'g'ri
+ * ishlash muhimroq: so'rovlarga umuman aralashmaymiz.
+ */
 
-self.addEventListener("install", (e) => {
-  e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)));
+const CACHE_PREFIX = "stomgo-";
+
+self.addEventListener("install", () => {
   self.skipWaiting();
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k))))
+    (async () => {
+      // Eski versiyalar qoldirgan barcha keshlarni tozalaymiz
+      const keys = await caches.keys();
+      await Promise.all(keys.filter((k) => k.startsWith(CACHE_PREFIX)).map((k) => caches.delete(k)));
+      await self.clients.claim();
+    })()
   );
-  self.clients.claim();
-});
-
-self.addEventListener("fetch", (e) => {
-  const url = new URL(e.request.url);
-  if (e.request.method !== "GET" || url.origin !== location.origin) return;
-
-  // API va xarita plitkalari — doim tarmoqdan
-  if (url.pathname.startsWith("/api/")) return;
-
-  const isNavigation = e.request.mode === "navigate";
-  const isStatic = url.pathname.startsWith("/_next/static");
-
-  // MUHIM: JS/CSS so'roviga HECH QACHON HTML qaytarmaymiz.
-  // Avval shunday edi va tarmoq uzilganda brauzer
-  // "Failed to load module script: non-JavaScript MIME type text/html"
-  // xatosini berardi — natijada xarita moduli yuklanmay qolardi.
-  if (isStatic) {
-    e.respondWith(
-      caches.match(e.request).then(
-        (hit) =>
-          hit ??
-          fetch(e.request).then((res) => {
-            if (res.ok) {
-              const copy = res.clone();
-              caches.open(CACHE).then((c) => c.put(e.request, copy));
-            }
-            return res;
-          })
-      )
-    );
-    return;
-  }
-
-  // Sahifalar: network-first, oflaynda keshdan yoki bosh sahifa
-  if (isNavigation) {
-    e.respondWith(
-      fetch(e.request)
-        .then((res) => {
-          if (res.ok && url.pathname === "/") {
-            const copy = res.clone();
-            caches.open(CACHE).then((c) => c.put(e.request, copy));
-          }
-          return res;
-        })
-        .catch(() => caches.match(e.request).then((m) => m ?? caches.match("/")))
-    );
-    return;
-  }
-
-  // Qolganlari (rasm, shrift va h.k.) — tarmoqdan, zaxirasiz
 });
 
 /* ---------------- Push bildirishnoma ---------------- */

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import ClinicBookForm from "@/components/ClinicBookForm";
+import TimeInput from "@/components/TimeInput";
 
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
@@ -159,8 +160,7 @@ export default function ClinicAppointmentsPage() {
         <div className="mt-3 flex gap-2">
           <input type="date" value={altDate} onChange={(e) => setAltDate(e.target.value)}
             className="flex-1 rounded-xl border border-zinc-200 px-3 py-2.5 text-[14px] outline-none" />
-          <input type="time" value={altTime} onChange={(e) => setAltTime(e.target.value)}
-            className="flex-1 rounded-xl border border-zinc-200 px-3 py-2.5 text-[14px] outline-none" />
+          <TimeInput value={altTime} onChange={setAltTime} step={15} ariaLabel="Muqobil vaqt" />
         </div>
         <button
           disabled={busy || !altDate || !altTime}

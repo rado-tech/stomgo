@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import TimeInput from "@/components/TimeInput";
 
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
@@ -216,16 +217,16 @@ export default function SettingsPage() {
                   </label>
                   {open ? (
                     <div className="flex items-center gap-1.5">
-                      <input
-                        type="time" value={ranges[0][0]}
-                        onChange={(e) => setDay(key, [[e.target.value, ranges[0][1]]])}
-                        className="rounded-lg border border-zinc-200 px-2 py-1.5 text-[13px] outline-none"
+                      <TimeInput
+                        value={ranges[0][0]}
+                        onChange={(v) => setDay(key, [[v, ranges[0][1]]])}
+                        step={30} ariaLabel="Ochilish vaqti"
                       />
                       <span className="text-zinc-400">–</span>
-                      <input
-                        type="time" value={ranges[0][1] === "24:00" ? "23:59" : ranges[0][1]}
-                        onChange={(e) => setDay(key, [[ranges[0][0], e.target.value]])}
-                        className="rounded-lg border border-zinc-200 px-2 py-1.5 text-[13px] outline-none"
+                      <TimeInput
+                        value={ranges[0][1] === "24:00" ? "23:59" : ranges[0][1]}
+                        onChange={(v) => setDay(key, [[ranges[0][0], v]])}
+                        step={30} ariaLabel="Yopilish vaqti"
                       />
                     </div>
                   ) : (

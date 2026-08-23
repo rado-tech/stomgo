@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { Text, Pressable, View, Linking } from "react-native";
 import { C } from "../theme";
 import { Sheet } from "./ui";

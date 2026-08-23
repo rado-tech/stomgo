@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from "react";
-import { View, Text, Platform } from "react-native";
+import { View, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { NavigationContainer, DefaultTheme, type NavigationContainerRef } from "@react-navigation/native";
@@ -15,6 +15,7 @@ import ChatsScreen from "./src/screens/ChatsScreen";
 import ChatScreen from "./src/screens/ChatScreen";
 import ProfilScreen from "./src/screens/ProfilScreen";
 import NotificationsScreen from "./src/screens/NotificationsScreen";
+import SettingsScreen from "./src/screens/SettingsScreen";
 import * as Notifications from "expo-notifications";
 import { C, ThemeProvider, useTheme } from "./src/theme";
 import { registerPush, parseLink } from "./src/push";
@@ -25,7 +26,7 @@ const Tab = createBottomTabNavigator();
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const TAB_ICONS: Record<string, [IconName, IconName]> = {
-  Asosiy: ["home", "home-outline"],
+  Asosiy: ["home-sharp", "home-outline"],
   Klinikalar: ["business", "business-outline"],
   Xabarlar: ["chatbubble-ellipses", "chatbubble-ellipses-outline"],
   Profil: ["person-circle", "person-circle-outline"],
@@ -130,6 +131,7 @@ function Root() {
         <Stack.Screen name="Map" component={MapScreen as React.ComponentType} />
         <Stack.Screen name="Chat" component={ChatScreen as React.ComponentType} />
         <Stack.Screen name="Notifications" component={NotificationsScreen as React.ComponentType} />
+        <Stack.Screen name="Settings" component={SettingsScreen as React.ComponentType} />
       </Stack.Navigator>
     </NavigationContainer>
   );

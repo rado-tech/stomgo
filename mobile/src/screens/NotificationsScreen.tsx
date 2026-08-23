@@ -25,7 +25,7 @@ export default function NotificationsScreen({ navigation }: {
     setData(d ?? { items: [], unread: 0 });
   }, []);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { const t = setTimeout(() => void load(), 0); return () => clearTimeout(t); }, [load]);
 
   const refresh = async () => {
     setRefreshing(true);

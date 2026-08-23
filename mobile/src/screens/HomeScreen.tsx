@@ -214,7 +214,18 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (s:
           </View>
 
           <View style={{ flexDirection: "row", gap: 7, marginLeft: "auto" }}>
-            <IconPill name="map-outline" onPress={() => navigation.navigate("Map", { query })} />
+            {/* Xarita — ikonka yolg'iz tushunarsiz, yozuv bilan */}
+            <Pressable
+              onPress={() => navigation.navigate("Map", { query })}
+              style={{
+                flexDirection: "row", alignItems: "center", gap: 5,
+                backgroundColor: C.pill, borderRadius: 999,
+                paddingLeft: 10, paddingRight: 13, paddingVertical: 8,
+              }}
+            >
+              <Ionicons name="map-outline" size={18} color={C.ink2} />
+              <Text style={{ fontSize: 13, fontWeight: "700", color: C.ink2 }}>Xarita</Text>
+            </Pressable>
             <IconPill name="notifications-outline" badge={unread} onPress={() => navigation.navigate("Notifications")} />
           </View>
         </View>

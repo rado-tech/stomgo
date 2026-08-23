@@ -3,10 +3,10 @@ import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator, Alert,
 import Constants from "expo-constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { api, getBaseUrl, setBaseUrl, getToken, setToken } from "../api";
-import { C, statusUi, useTheme, type ThemeMode } from "../theme";
+import { api, getToken, setToken } from "../api";
+import { C, statusUi, useTheme } from "../theme";
 import { fmtDateTime } from "../format";
-import { Badge, Btn, Sheet, IconPill, Empty, type IconName } from "../components/ui";
+import { Badge, Btn, Sheet, IconPill } from "../components/ui";
 import { registerPush, unregisterPush, isPushOn } from "../push";
 import type { Appointment, Me, OtpResponse } from "../types";
 
@@ -21,7 +21,7 @@ const FILTERS: [Filter, string][] = [
 
 export default function ProfilScreen({ navigation }: { navigation: { navigate: (s: string, p?: object) => void } }) {
   const insets = useSafeAreaInsets();
-  const { mode, setMode } = useTheme();
+  useTheme();
 
   const [me, setMe] = useState<Me | null>(null);
   const [checked, setChecked] = useState(false);
@@ -57,10 +57,6 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
   const [reviewText, setReviewText] = useState("");
 
   // Menyu / oynalar
-  const [menuOpen, setMenuOpen] = useState(false);
-  const [langOpen, setLangOpen] = useState(false);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [serverUrl, setServerUrl] = useState("");
   const [tg, setTg] = useState<{ linked: boolean; deepLink: string | null; botUsername?: string } | null>(null);
 
   // Tahrirlash
@@ -92,8 +88,8 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
   }, []);
 
   useEffect(() => {
-    void loadMe();
-    getBaseUrl().then(setServerUrl);
+    const t = setTimeout(() => void loadMe(), 0);
+    return () => clearTimeout(t);
   }, [loadMe]);
 
   // Push holati (kirgandan keyin tekshiriladi)
@@ -139,7 +135,7 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
 
   const logout = async () => {
     await setToken(null);
-    setMe(null); setItems(null); setTg(null); setMenuOpen(false);
+    setMe(null); setItems(null); setTg(null);
   };
 
   // ---------- Yozuv amallari ----------
@@ -283,12 +279,6 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
     }
   };
 
-  const saveServer = async () => {
-    await setBaseUrl(serverUrl.trim());
-    setSettingsOpen(false);
-    Alert.alert("Saqlandi", "Server manzili yangilandi. Ro'yxatni pastga torting.");
-  };
-
   // ---------- Yozuvlar tarixi ----------
   const counts = useMemo(() => {
     const l = items ?? [];
@@ -317,7 +307,7 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
     return (
       <ScrollView style={{ flex: 1, backgroundColor: C.bg }} contentContainerStyle={{ padding: 20, paddingTop: insets.top + 50 }} keyboardShouldPersistTaps="handled">
         <View style={{ flexDirection: "row", justifyContent: "flex-end" }}>
-          <IconPill name="menu" onPress={() => setMenuOpen(true)} size={20} />
+          <IconPill name="menu" onPress={() => navigation.navigate("Settings")} size={20} />
         </View>
         <Text style={{ fontSize: 26, fontWeight: "900", color: C.brandDark, textAlign: "center", marginTop: 6 }}>StomGo</Text>
 
@@ -384,17 +374,6 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
           </>
         )}
 
-        <MenuSheet
-          open={menuOpen} onClose={() => setMenuOpen(false)}
-          mode={mode} setMode={setMode}
-          onLang={() => { setMenuOpen(false); setLangOpen(true); }}
-          onPrivacy={async () => { setMenuOpen(false); void Linking.openURL(`${await getBaseUrl()}/maxfiylik`); }}
-          onSupport={() => { setMenuOpen(false); void Linking.openURL(`https://t.me/${tg?.botUsername ?? "finaybot"}`); }}
-          onServer={() => { setMenuOpen(false); setSettingsOpen(true); }}
-          onLogout={null}
-        />
-        <LangSheet open={langOpen} onClose={() => setLangOpen(false)} />
-        <ServerSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} value={serverUrl} onChange={setServerUrl} onSave={saveServer} />
       </ScrollView>
     );
   }
@@ -420,7 +399,7 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
           <IconPill name="pencil" onPress={openEdit} size={18} />
-          <IconPill name="menu" onPress={() => setMenuOpen(true)} size={20} />
+          <IconPill name="menu" onPress={() => navigation.navigate("Settings")} size={20} />
         </View>
       </View>
 
@@ -582,20 +561,9 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
       </Text>
 
       {/* ---------- Oynalar ---------- */}
-      <MenuSheet
-        open={menuOpen} onClose={() => setMenuOpen(false)}
-        mode={mode} setMode={setMode}
-        onLang={() => { setMenuOpen(false); setLangOpen(true); }}
-        onPrivacy={async () => { setMenuOpen(false); void Linking.openURL(`${await getBaseUrl()}/maxfiylik`); }}
-        onSupport={() => { setMenuOpen(false); void Linking.openURL(`https://t.me/${tg?.botUsername ?? "finaybot"}`); }}
-        onServer={() => { setMenuOpen(false); setSettingsOpen(true); }}
-        onLogout={logout}
-      />
-      <LangSheet open={langOpen} onClose={() => setLangOpen(false)} />
-      <ServerSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} value={serverUrl} onChange={setServerUrl} onSave={saveServer} />
 
       {/* Tahrirlash */}
-      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title="Profilni tahrirlash">
+      <Sheet open={editOpen} onClose={() => setEditOpen(false)} title="Profilni tahrirlash" position="center">
         <Text style={{ fontSize: 12.5, color: C.mut, marginBottom: 4 }}>Ism</Text>
         <TextInput value={editName} onChangeText={setEditName} placeholderTextColor={C.faint}
           style={{ borderWidth: 1.2, borderColor: C.line, borderRadius: 13, paddingHorizontal: 12, paddingVertical: 10, fontSize: 14, marginBottom: 10, color: C.text }} />
@@ -617,22 +585,42 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
           ))}
         </View>
         <Pressable onPress={() => { setEditOpen(false); setPhoneOpen(true); }} style={{ marginBottom: 12 }}>
-          <Text style={{ fontSize: 13, fontWeight: "700", color: C.brand }}>📱 Raqamni almashtirish ({me.phone}) →</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Text style={{ fontSize: 13, fontWeight: "700", color: C.brand }}>Raqamni almashtirish</Text>
+            <Text style={{ fontSize: 12.5, color: C.mut }}>{me.phone}</Text>
+            <Ionicons name="chevron-forward" size={14} color={C.faint} />
+          </View>
         </Pressable>
         <Btn title={busy ? "..." : "Saqlash"} onPress={saveProfile} disabled={busy} />
       </Sheet>
 
       {/* Raqam almashtirish */}
-      <Sheet open={phoneOpen} onClose={() => { setPhoneOpen(false); setPhoneStep("phone"); }} title="Raqamni almashtirish">
+      <Sheet open={phoneOpen} onClose={() => { setPhoneOpen(false); setPhoneStep("phone"); }} title="Raqamni almashtirish" position="center">
         {phoneStep === "phone" ? (
           <>
-            <Text style={{ fontSize: 13, color: C.mut, marginBottom: 10 }}>Yangi raqamni Telegram botda tasdiqlaysiz.</Text>
-            <View style={{ flexDirection: "row", alignItems: "center", borderWidth: 1.2, borderColor: C.line, borderRadius: 13, paddingHorizontal: 12, marginBottom: 12 }}>
-              <Text style={{ fontWeight: "700", color: C.mut }}>+998</Text>
-              <TextInput value={newPhone} onChangeText={setNewPhone} keyboardType="phone-pad"
-                placeholder="90 123 45 67" placeholderTextColor={C.faint}
-                style={{ flex: 1, paddingVertical: 11, paddingHorizontal: 7, fontSize: 15, color: C.text }} />
+            <View style={{ backgroundColor: C.pill, borderRadius: 14, padding: 12, marginBottom: 14 }}>
+              <Text style={{ fontSize: 12, color: C.mut }}>Hozirgi raqam</Text>
+              <Text style={{ fontSize: 16, fontWeight: "800", color: C.text, marginTop: 2 }}>{me.phone}</Text>
             </View>
+
+            <Text style={{ fontSize: 12.5, fontWeight: "700", color: C.ink2, marginBottom: 6 }}>Yangi raqam</Text>
+            <View style={{
+              flexDirection: "row", alignItems: "center",
+              borderWidth: 1.5, borderColor: newPhone ? C.brand : C.line,
+              borderRadius: 14, paddingHorizontal: 14, marginBottom: 10,
+            }}>
+              <Text style={{ fontWeight: "800", fontSize: 15.5, color: C.ink2 }}>+998</Text>
+              <View style={{ width: 1, height: 22, backgroundColor: C.line, marginHorizontal: 10 }} />
+              <TextInput
+                value={newPhone} onChangeText={setNewPhone} keyboardType="phone-pad"
+                placeholder="90 123 45 67" placeholderTextColor={C.faint} maxLength={12}
+                style={{ flex: 1, paddingVertical: 13, fontSize: 16, letterSpacing: 0.5, color: C.text }}
+              />
+            </View>
+            <Text style={{ fontSize: 12, color: C.mut, lineHeight: 17, marginBottom: 14 }}>
+              Tasdiqlash kodi Telegram botga yuboriladi. Yangi raqam avvalgisining
+              o&apos;rniga ishlatiladi.
+            </Text>
             <Btn title={busy ? "..." : "Kod olish"} onPress={requestPhoneChange} disabled={busy || newPhone.replace(/\D/g, "").length < 9} />
           </>
         ) : (
@@ -764,93 +752,3 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
 }
 
 /** ☰ menyu: mavzu, til, maxfiylik, qo'llab-quvvatlash, server, chiqish */
-function MenuSheet({
-  open, onClose, mode, setMode, onLang, onPrivacy, onSupport, onServer, onLogout,
-}: {
-  open: boolean; onClose: () => void;
-  mode: ThemeMode; setMode: (m: ThemeMode) => void;
-  onLang: () => void; onPrivacy: () => void; onSupport: () => void; onServer: () => void;
-  onLogout: null | (() => void);
-}) {
-  const Row = ({ icon, label, onPress, danger }: { icon: IconName; label: string; onPress: () => void; danger?: boolean }) => (
-    <Pressable onPress={onPress}
-      style={{
-        flexDirection: "row", alignItems: "center", gap: 11,
-        paddingVertical: 13, paddingHorizontal: 12, borderRadius: 13, marginBottom: 6,
-        borderWidth: danger ? 1.5 : 1.2,
-        borderColor: danger ? C.red : C.line,
-        backgroundColor: danger ? C.redBg : C.card,
-      }}>
-      <Ionicons name={icon} size={19} color={danger ? C.red : C.ink2} />
-      <Text style={{ fontSize: 14.5, fontWeight: danger ? "800" : "600", color: danger ? C.red : C.text }}>{label}</Text>
-    </Pressable>
-  );
-
-  return (
-    <Sheet open={open} onClose={onClose} title="Menyu">
-      {/* Mavzu — ixcham */}
-      <Text style={{ fontSize: 12.5, fontWeight: "700", color: C.mut, marginBottom: 6 }}>Mavzu</Text>
-      <View style={{ flexDirection: "row", gap: 6, marginBottom: 14 }}>
-        {([["light", "Kunduz"], ["dark", "Tun"], ["system", "Tizim"]] as [ThemeMode, string][]).map(([m, label]) => (
-          <Pressable key={m} onPress={() => setMode(m)}
-            style={{
-              flex: 1, borderWidth: 1.4, borderRadius: 12, paddingVertical: 9, alignItems: "center",
-              borderColor: mode === m ? C.brand : C.line,
-              backgroundColor: mode === m ? C.brandLight : C.card,
-            }}>
-            <Text style={{ fontSize: 12, fontWeight: "700", color: mode === m ? C.brand : C.ink2 }}>{label}</Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <Row icon="language-outline" label="Til" onPress={onLang} />
-      <Row icon="shield-checkmark-outline" label="Maxfiylik siyosati" onPress={onPrivacy} />
-      <Row icon="headset-outline" label="Qo'llab-quvvatlash" onPress={onSupport} />
-      <Row icon="settings-outline" label="Server sozlamasi" onPress={onServer} />
-      {onLogout && <Row icon="log-out-outline" label="Chiqish" onPress={onLogout} danger />}
-    </Sheet>
-  );
-}
-
-function LangSheet({ open, onClose }: { open: boolean; onClose: () => void }) {
-  return (
-    <Sheet open={open} onClose={onClose} title="Til">
-      <View style={{
-        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        borderWidth: 1.4, borderColor: C.brand, backgroundColor: C.brandLight,
-        borderRadius: 13, padding: 13, marginBottom: 8,
-      }}>
-        <Text style={{ fontSize: 14.5, fontWeight: "700", color: C.text }}>🇺🇿 O&apos;zbekcha</Text>
-        <Text style={{ color: C.brand, fontWeight: "900" }}>✓</Text>
-      </View>
-      <View style={{
-        flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-        borderWidth: 1.2, borderColor: C.line, borderRadius: 13, padding: 13, opacity: 0.6,
-      }}>
-        <Text style={{ fontSize: 14.5, fontWeight: "600", color: C.text }}>🇷🇺 Русский</Text>
-        <Text style={{ fontSize: 12, color: C.mut }}>tez orada</Text>
-      </View>
-      <Text style={{ fontSize: 12, color: C.faint, marginTop: 10 }}>
-        Rus tili keyingi versiyada qo&apos;shiladi.
-      </Text>
-    </Sheet>
-  );
-}
-
-function ServerSheet({ open, onClose, value, onChange, onSave }: {
-  open: boolean; onClose: () => void; value: string; onChange: (v: string) => void; onSave: () => void;
-}) {
-  return (
-    <Sheet open={open} onClose={onClose} title="Server sozlamasi">
-      <Text style={{ fontSize: 12.5, color: C.mut, marginBottom: 8 }}>
-        Server manzili o&apos;zgargan bo&apos;lsa, yangisini kiriting — ilova qayta o&apos;rnatilmaydi.
-      </Text>
-      <TextInput
-        value={value} onChangeText={onChange} autoCapitalize="none" autoCorrect={false}
-        placeholder="https://..." placeholderTextColor={C.faint}
-        style={{ borderWidth: 1.2, borderColor: C.line, borderRadius: 13, padding: 11, fontSize: 13, marginBottom: 12, color: C.text }}
-      />
-      <Btn title="Saqlash" onPress={onSave} />
-    </Sheet>
-  );
-}

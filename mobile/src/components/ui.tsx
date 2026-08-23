@@ -151,17 +151,32 @@ export function ScreenHeader({ title, onBack, right }: { title: string; onBack?:
 }
 
 /** Pastdan chiqadigan oyna — klaviatura ochilganda ko'tariladi */
-export function Sheet({ open, onClose, title, children }: {
+export function Sheet({ open, onClose, title, children, position = "bottom" }: {
   open: boolean; onClose: () => void; title?: string; children: React.ReactNode;
+  /** "bottom" — pastdan (standart), "center" — ekran o'rtasida (klaviatura uchun qulay) */
+  position?: "bottom" | "center";
 }) {
   const insets = useSafeAreaInsets();
+  const centered = position === "center";
+
   return (
-    <Modal visible={open} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={{ flex: 1, justifyContent: "flex-end" }} behavior={Platform.OS === "ios" ? "padding" : "height"}>
+    <Modal visible={open} transparent animationType={centered ? "fade" : "slide"} onRequestClose={onClose}>
+      <KeyboardAvoidingView
+        style={{ flex: 1, justifyContent: centered ? "center" : "flex-end" }}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <Pressable style={s.backdrop} onPress={onClose} />
-        <View style={[s.sheet, { backgroundColor: C.card, paddingBottom: Math.max(insets.bottom, 14) + 6 }]}>
-          <View style={s.grabber} />
-          <View style={s.sheetHeader}>
+        <View
+          style={[
+            s.sheet,
+            { backgroundColor: C.card },
+            centered
+              ? { marginHorizontal: 16, borderRadius: 22, paddingBottom: 18 }
+              : { paddingBottom: Math.max(insets.bottom, 14) + 6 },
+          ]}
+        >
+          {!centered && <View style={s.grabber} />}
+          <View style={[s.sheetHeader, centered && { marginTop: 4 }]}>
             <Text style={{ fontSize: 17, fontWeight: "800", color: C.text }}>{title}</Text>
             <IconPill name="close" onPress={onClose} size={17} />
           </View>

@@ -42,7 +42,7 @@ export default function ChatScreen({ route, navigation }: {
     }
   }, [id]);
 
-  useEffect(() => { void load(); }, [load]);
+  useEffect(() => { const t = setTimeout(() => void load(), 0); return () => clearTimeout(t); }, [load]);
   useEffect(() => { void getBaseUrl().then(setBase); }, []);
 
   // Yangi xabarlarni kuzatib turamiz
