@@ -3,14 +3,18 @@
  * Lokal: npm run bot   Server: docker compose "bot" servisi
  *
  * Imkoniyatlar:
- *  BEMOR:  ulash, 📅 Yozuvlarim (bekor qilish bilan), eslatmalar (24s/2s),
- *          tashrifdan keyin baholash (yulduz bosish → matn yozish)
+ *  HAMMAGA: 🔍 Klinika topish — tuman bo'yicha yoki hozir ochiqlar
+ *           (hisob ulanmagan bo'lsa ham ishlaydi)
+ *  BEMOR:   ulash, 📅 Yozuvlarim (bekor qilish bilan), eslatmalar (24s/2s),
+ *           tashrifdan keyin baholash (yulduz bosish → matn yozish)
  *  KLINIKA: ulash, yangi so'rov + tugmalar, ⏳ Kutilayotganlar,
- *          📋 Bugungi yozuvlar, 📷 QR kod
+ *           📋 Bugungi yozuvlar, 📷 QR kod
+ *  Buyruqlar: /start /klinikalar /yozuvlarim /yordam /uzish
  */
 import { Bot, InlineKeyboard, Keyboard, type Context } from "grammy";
 import { PrismaClient } from "@prisma/client";
 import { fmtDateTimeUz as fmtDT } from "../lib/date-uz";
+import { DISTRICTS } from "../lib/districts";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -26,8 +30,13 @@ const awaitingReviewText = new Map<string, string>();
 // Kirish uchun raqam tasdiqlash kutilmoqda: chatId -> otp tgToken
 const awaitingContact = new Map<string, string>();
 
+/** Saytning ommaviy manzili — botdagi havolalar uchun */
+const SITE = (process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000").replace(/\/+$/, "");
+
 const PATIENT_MENU = new Keyboard()
-  .text("📅 Yozuvlarim").text("ℹ️ Yordam")
+  .text("📅 Yozuvlarim").text("🔍 Klinika topish")
+  .row()
+  .text("ℹ️ Yordam")
   .resized().persistent();
 
 const CLINIC_MENU = new Keyboard()
@@ -101,10 +110,50 @@ bot.command("start", async (ctx) => {
     );
     return;
   }
+  // Hisobi ulanmagan bo'lsa ham bot foydali bo'lsin — klinika qidirsa bo'ladi
   await ctx.reply(
-    "Assalomu alaykum! Bu StomGo boti.\n\n" +
-      "🔗 Hisobingizni ulash uchun ilova yoki paneldagi «Telegram'ga ulash» tugmasidan foydalaning.\n" +
-      "Kod bo'lsa, shu yerga yuboring (masalan: u_ab12cd34)."
+    "Assalomu alaykum! Bu <b>StomGo</b> boti — Toshkentdagi stomatologiyalar.\n\n" +
+      "🔍 Klinika topish uchun pastdagi tugmani bosing — hisob shart emas.\n\n" +
+      "🔗 Yozuvlaringiz va eslatmalar shu yerga kelishi uchun hisobingizni ulang: " +
+      "ilova yoki paneldagi «Telegram'ga ulash» tugmasi. Kod bo'lsa shu yerga yuboring " +
+      "(masalan: <code>u_ab12cd34</code>).",
+    { parse_mode: "HTML", reply_markup: PATIENT_MENU },
+  );
+});
+
+// ---------- /uzish: hisobni botdan ajratish ----------
+bot.command("uzish", async (ctx) => {
+  const chatId = String(ctx.chat.id);
+  const role = await chatRole(chatId);
+
+  if (!role) {
+    await ctx.reply("Bu chatga hech qanday hisob ulanmagan.");
+    return;
+  }
+
+  if (role.type === "clinic") {
+    await db.clinic.update({ where: { id: role.clinic.id }, data: { telegramChatId: null } });
+    await db.auditLog.create({
+      data: { actorRole: "BOT", actorName: role.clinic.name, action: "TG_UNLINK", entity: "Clinic", entityId: role.clinic.id },
+    }).catch(() => {});
+    await ctx.reply(
+      `🔌 «${role.clinic.name}» uzildi. Yangi so'rovlar bu yerga tushmaydi.\n\n` +
+        "⚠️ Diqqat: parolni tiklash ham shu ulanish orqali ishlaydi. " +
+        "Qaytadan ulash uchun paneldan yangi kod oling.",
+      { reply_markup: { remove_keyboard: true } },
+    );
+    return;
+  }
+
+  await db.user.update({ where: { id: role.user.id }, data: { telegramChatId: null } });
+  await db.auditLog.create({
+    data: { actorId: role.user.id, actorRole: "BOT", actorName: role.user.name ?? "Bemor", action: "TG_UNLINK", entity: "User", entityId: role.user.id },
+  }).catch(() => {});
+  await ctx.reply(
+    "🔌 Hisobingiz uzildi. Eslatmalar bu yerga kelmaydi.\n\n" +
+      "⚠️ Diqqat: saytga kirish kodi ham shu bot orqali keladi. " +
+      "Qaytadan ulash uchun ilovadagi Profil bo'limidan yangi kod oling.",
+    { reply_markup: { remove_keyboard: true } },
   );
 });
 
@@ -221,7 +270,19 @@ bot.on("message:text", async (ctx) => {
     return;
   }
 
-  if (role?.type === "user" && text === "📅 Yozuvlarim") {
+  // Klinika qidirish — hisob ulanmagan bo'lsa ham ishlaydi
+  if (text === "🔍 Klinika topish" || text === "/klinikalar") {
+    const kb = new InlineKeyboard();
+    DISTRICTS.forEach((d, i) => {
+      kb.text(d, `dist:${d}`);
+      if (i % 2 === 1) kb.row();
+    });
+    kb.row().text("🌙 Hozir ochiq", "dist:__open__");
+    await ctx.reply("Qaysi tumandan qidiramiz?", { reply_markup: kb });
+    return;
+  }
+
+  if (role?.type === "user" && (text === "📅 Yozuvlarim" || text === "/yozuvlarim")) {
     const items = await db.appointment.findMany({
       where: { userId: role.user.id, status: { in: ["PENDING", "CONFIRMED", "ALT_OFFERED"] } },
       include: { clinic: { select: { name: true, address: true } } },
@@ -297,12 +358,66 @@ bot.on("message:text", async (ctx) => {
       return;
     }
   }
+
+  // Hech nimaga to'g'ri kelmadi — jim qolmaymiz, yo'l ko'rsatamiz
+  await ctx.reply(
+    role
+      ? "Tushunmadim. Pastdagi tugmalardan foydalaning yoki /yordam yozing."
+      : "Tushunmadim.\n\n🔍 Klinika topish uchun tugmani bosing.\n" +
+        "🔗 Hisobingizni ulash uchun ilovadagi «Telegram'ga ulash» dan kod oling.",
+    { reply_markup: role?.type === "clinic" ? CLINIC_MENU : PATIENT_MENU },
+  );
 });
 
 // ---------- Inline tugmalar ----------
 bot.on("callback_query:data", async (ctx) => {
   const data = ctx.callbackQuery.data;
   const chatId = String(ctx.chat?.id ?? "");
+
+  // Tuman bo'yicha klinika ro'yxati
+  const mDist = data.match(/^dist:(.+)$/);
+  if (mDist) {
+    const key = mDist[1];
+    const openNow = key === "__open__";
+
+    const clinics = await db.clinic.findMany({
+      where: {
+        deactivatedAt: null,
+        ...(openNow ? { OR: [{ is247: true }, { emergency: true }] } : { district: key }),
+      },
+      select: { name: true, slug: true, district: true, address: true, rating: true, phone: true, is247: true, workingHours: true },
+      orderBy: { rating: "desc" },
+      take: 8,
+    });
+
+    await ctx.answerCallbackQuery();
+
+    if (!clinics.length) {
+      await ctx.reply(
+        openNow
+          ? "Hozir kecha-kunduz ishlaydigan klinika topilmadi."
+          : `${key} tumanida klinika topilmadi. Boshqa tumanni tanlang.`,
+      );
+      return;
+    }
+
+    const lines = clinics.map((c, i) => {
+      const stars = c.rating > 0 ? ` ⭐ ${c.rating.toFixed(1)}` : "";
+      const nonstop = c.is247 ? " · 24/7" : "";
+      return (
+        `${i + 1}. <b>${c.name}</b>${stars}${nonstop}\n` +
+        `    📍 ${c.address}\n` +
+        `    <a href="${SITE}/klinika/${c.slug}">Batafsil va qabulga yozilish →</a>`
+      );
+    });
+
+    await ctx.reply(
+      `${openNow ? "🌙 <b>Kecha-kunduz ishlaydiganlar</b>" : `🏥 <b>${key} tumani</b>`} (${clinics.length} ta):\n\n` +
+        lines.join("\n\n"),
+      { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
+    );
+    return;
+  }
 
   // Klinika: tasdiqlash/rad etish
   const mApt = data.match(/^apt:(confirm|reject):(.+)$/);
@@ -499,8 +614,26 @@ setInterval(() => void reminderTick().catch((e) => console.error("Eslatma xatosi
 setInterval(() => void preventiveTick().catch((e) => console.error("Profilaktika xatosi:", e)), 24 * 3600 * 1000);
 void preventiveTick().catch(() => {});
 
-bot.catch((err) => console.error("Bot xatosi:", err.message));
+// Xato bo'lsa foydalanuvchi jim qolmasin — nima bo'lganini bilsin
+bot.catch(async (err) => {
+  console.error("Bot xatosi:", err.message);
+  await err.ctx
+    .reply("⚠️ Kutilmagan xatolik. Birozdan keyin qayta urining.")
+    .catch(() => {});
+});
+
+/** Telegram menyusidagi buyruqlar ro'yxati */
+async function publishCommands() {
+  await bot.api.setMyCommands([
+    { command: "start", description: "Boshlash va hisobni ulash" },
+    { command: "klinikalar", description: "Klinika topish" },
+    { command: "yozuvlarim", description: "Faol yozuvlarim" },
+    { command: "yordam", description: "Yordam" },
+    { command: "uzish", description: "Hisobni botdan uzish" },
+  ]).catch((e) => console.error("Buyruqlarni o'rnatib bo'lmadi:", e));
+}
 
 console.log("StomGo bot ishga tushdi (long polling)...");
+void publishCommands();
 void reminderTick().catch(() => {});
 bot.start();
