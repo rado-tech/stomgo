@@ -98,7 +98,7 @@ export default function HomeScreen({ navigation }: { navigation: { navigate: (s:
     >
       <View style={{ height: 132, backgroundColor: C.pill }}>
         {c.photoUrl ? (
-          <Image source={{ uri: absUrl(base, c.photoUrl)! }} style={{ width: "100%", height: "100%" }} />
+          <Image source={{ uri: absUrl(base, c.photoUrl)! }} alt={c.name} style={{ width: "100%", height: "100%" }} />
         ) : (
           <View style={{ flex: 1, alignItems: "center", justifyContent: "center", backgroundColor: `hsl(${c.coverHue}, 45%, 42%)` }}>
             <Text style={{ color: "#fff", fontSize: 40, fontWeight: "800" }}>{c.name[0]}</Text>

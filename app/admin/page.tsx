@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/client";
 import { Badge, Sheet, Spinner, Toast } from "@/components/ui";
+import { fmtDateTime } from "@/lib/format";
 
 type AdminStats = {
   totals: { clinics: number; patients: number; bookings30d: number; arrived30d: number; noShow30d: number; pendingReviews: number; triages: number };
@@ -179,7 +180,7 @@ export default function AdminPage() {
             <span className="text-zinc-500">{tr.specialty}</span>
             {tr.aiUsed && <Badge color="violet">AI</Badge>}
             <span className="min-w-0 flex-1 truncate text-zinc-400">{tr.freeText || "savollar orqali"}</span>
-            <span className="shrink-0 text-[11px] text-zinc-400">{new Date(tr.date).toLocaleString("uz-UZ")}</span>
+            <span className="shrink-0 text-[11px] text-zinc-400">{fmtDateTime(tr.date)}</span>
           </div>
         ))}
       </div>

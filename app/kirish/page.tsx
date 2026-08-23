@@ -58,7 +58,10 @@ function LoginForm() {
     setError(""); setLoading(true);
     try {
       const res = await api<{ redirect: string }>("/api/auth/login", { json: { username, password } });
-      router.push(next || res.redirect);
+      // Xodim login/parol bilan kirsa — DOIM o'z paneliga.
+      // `next` faqat o'sha panel ichidagi sahifa bo'lsa hurmat qilinadi.
+      const inPanel = next && next.startsWith(res.redirect);
+      router.push(inPanel ? next : res.redirect);
       router.refresh();
     } catch (e) {
       setError((e as Error).message);

@@ -14,7 +14,7 @@ export async function GET() {
   return NextResponse.json({
     reviews: reviews.map((r) => ({
       id: r.id, rating: r.rating, text: r.text, reply: r.reply,
-      author: r.user.name ? r.user.name[0] + "***" : "Bemor",
+      author: r.user.name?.trim() || "Bemor",
       date: r.createdAt,
     })),
   });

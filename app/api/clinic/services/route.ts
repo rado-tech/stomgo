@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import { requireRole, unauthorized } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { CATEGORIES } from "@/lib/categories";
+import { checkPrice } from "@/lib/price";
 
 
 
@@ -27,24 +28,6 @@ export async function GET() {
       priceMax: mineMap.get(s.id)?.priceMax ?? 0,
     })),
   });
-}
-
-/** Narx chegaralari (so'mda) — Int ustunidan oshmasligi ham shu yerda kafolatlanadi */
-const PRICE_MIN = 1_000;
-const PRICE_MAX = 500_000_000;
-
-/** Narxni tekshiradi: xato bo'lsa SABABINI qaytaradi, jimgina to'g'irlamaydi */
-function checkPrice(raw: unknown, label: string): { ok: true; value: number } | { ok: false; error: string } {
-  const text = String(raw ?? "").trim();
-  if (!text) return { ok: false, error: `${label} kiritilmagan` };
-  if (!/^\d+$/.test(text)) {
-    return { ok: false, error: `${label} faqat butun son bo'lishi kerak (manfiy son, kasr va harf bo'lmaydi)` };
-  }
-  const n = Number(text);
-  if (!Number.isSafeInteger(n)) return { ok: false, error: `${label} juda katta` };
-  if (n < PRICE_MIN) return { ok: false, error: `${label} kamida ${PRICE_MIN.toLocaleString("ru-RU")} so'm bo'lsin` };
-  if (n > PRICE_MAX) return { ok: false, error: `${label} ko'pi bilan ${PRICE_MAX.toLocaleString("ru-RU")} so'm bo'lsin` };
-  return { ok: true, value: n };
 }
 
 export async function PUT(req: NextRequest) {

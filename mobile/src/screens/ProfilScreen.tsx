@@ -133,11 +133,6 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
     }
   };
 
-  const logout = async () => {
-    await setToken(null);
-    setMe(null); setItems(null); setTg(null);
-  };
-
   // ---------- Yozuv amallari ----------
   const act = async (id: string, body: object, onDone?: () => void) => {
     try {

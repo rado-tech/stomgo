@@ -87,7 +87,7 @@ async function main() {
   const adminHash = await bcrypt.hash(adminPassword, 10);
   const clinicHash = await bcrypt.hash(clinicPassword, 10);
 
-  const admin = await db.user.create({
+  await db.user.create({
     data: { phone: "+998900000000", name: "Admin", role: "ADMIN", username: "admin", passwordHash: adminHash },
   });
   const patient = await db.user.create({ data: { phone: "+998901234567", name: "Shaxobiddin", role: "PATIENT", birthYear: 1999 } });

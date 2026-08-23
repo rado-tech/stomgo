@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { CATEGORY_LABELS } from "@/lib/categories";
+import { PRICE_MIN, PRICE_MAX } from "@/lib/price";
 import { api } from "@/lib/client";
 import { Spinner, Toast } from "@/components/ui";
 
@@ -9,8 +10,6 @@ type Svc = { serviceId: string; code: string; name: string; category: string; is
 
 
 /** Narx chegaralari — server bilan bir xil */
-const PRICE_MIN = 1_000;
-const PRICE_MAX = 500_000_000;
 
 const nf = (n: number) => n.toLocaleString("ru-RU");
 

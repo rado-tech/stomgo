@@ -9,6 +9,7 @@ import { api } from "@/lib/client";
 import { Badge, Spinner, Toast } from "@/components/ui";
 import TelegramLink from "@/components/TelegramLink";
 import UploadButton from "@/components/UploadButton";
+import { fmtDate } from "@/lib/format";
 
 const LocationPicker = dynamic(() => import("@/components/LocationPicker"), { ssr: false });
 
@@ -275,7 +276,7 @@ export default function SettingsPage() {
           <h2 className="mb-2 font-bold">Tarif</h2>
           <div className="flex items-center gap-2">
             <Badge color={p.tier === "PREMIUM" ? "amber" : p.tier === "STANDARD" ? "teal" : "zinc"}>{p.tier}</Badge>
-            {p.tierEndsAt && <span className="text-[13px] text-zinc-500">amal qilish muddati: {new Date(p.tierEndsAt).toLocaleDateString("uz-UZ")}</span>}
+            {p.tierEndsAt && <span className="text-[13px] text-zinc-500">amal qilish muddati: {fmtDate(p.tierEndsAt)}</span>}
           </div>
           <p className="mt-2 text-[12.5px] text-zinc-400">
             Tarifni o&apos;zgartirish uchun administratsiya bilan bog&apos;laning.

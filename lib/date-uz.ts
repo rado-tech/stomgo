@@ -1,16 +1,14 @@
 /**
- * O'zbekcha sana formatlash (Toshkent vaqti).
- * Intl 'uz' lokali ba'zi muhitlarda (Node ICU, ayrim brauzerlar) to'liq emas —
- * "M08 22" kabi chiqadi. Shuning uchun oy/kun nomlari qo'lda beriladi.
+ * Sana formatlash (Toshkent vaqti). Butun loyihada bir xil: KUN/OY/YIL.
+ * Intl 'uz' lokali ba'zi muhitlarda to'liq emas ("M08 22" beradi),
+ * shuning uchun qo'lda yig'amiz.
  */
 
-const MONTHS = [
-  "yanvar", "fevral", "mart", "aprel", "may", "iyun",
-  "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr",
-];
 export const WEEKDAYS_UZ = [
   "Yakshanba", "Dushanba", "Seshanba", "Chorshanba", "Payshanba", "Juma", "Shanba",
 ];
+
+const pad = (n: number) => String(n).padStart(2, "0");
 
 function partsInTashkent(d: Date): { y: number; m: number; day: number; hh: string; mm: string; wd: number } {
   const fmt = new Intl.DateTimeFormat("en-CA", {
@@ -31,20 +29,20 @@ function partsInTashkent(d: Date): { y: number; m: number; day: number; hh: stri
   };
 }
 
-/** "22-avgust" */
+/** "22/08/2026" — butun loyihada bir xil: kun/oy/yil */
 export function fmtDateUz(d: Date | string): string {
-  const { m, day } = partsInTashkent(new Date(d));
-  return `${day}-${MONTHS[m - 1]}`;
+  const { y, m, day } = partsInTashkent(new Date(d));
+  return `${pad(day)}/${pad(m)}/${y}`;
 }
 
-/** "22-avgust, 15:00" */
+/** "22/08/2026, 15:00" */
 export function fmtDateTimeUz(d: Date | string): string {
   const p = partsInTashkent(new Date(d));
-  return `${p.day}-${MONTHS[p.m - 1]}, ${p.hh}:${p.mm}`;
+  return `${pad(p.day)}/${pad(p.m)}/${p.y}, ${p.hh}:${p.mm}`;
 }
 
-/** "Juma, 22-avgust" — slot kunlari uchun */
+/** "Juma, 22/08" — slot kunlari uchun */
 export function fmtWeekdayDateUz(d: Date | string): string {
   const p = partsInTashkent(new Date(d));
-  return `${WEEKDAYS_UZ[p.wd]}, ${p.day}-${MONTHS[p.m - 1]}`;
+  return `${WEEKDAYS_UZ[p.wd]}, ${pad(p.day)}/${pad(p.m)}`;
 }

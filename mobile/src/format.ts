@@ -1,8 +1,3 @@
-const MONTHS = [
-  "yanvar", "fevral", "mart", "aprel", "may", "iyun",
-  "iyul", "avgust", "sentabr", "oktabr", "noyabr", "dekabr",
-];
-
 function tashkentParts(d: Date) {
   const fmt = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Tashkent",
@@ -14,9 +9,16 @@ function tashkentParts(d: Date) {
   return p;
 }
 
+/** "22/08/2026, 15:00" — butun loyihada bir xil: kun/oy/yil */
 export function fmtDateTime(d: string | Date): string {
   const p = tashkentParts(new Date(d));
-  return `${parseInt(p.day, 10)}-${MONTHS[parseInt(p.month, 10) - 1]}, ${p.hour === "24" ? "00" : p.hour}:${p.minute}`;
+  return `${p.day}/${p.month}/${p.year}, ${p.hour === "24" ? "00" : p.hour}:${p.minute}`;
+}
+
+/** "22/08/2026" */
+export function fmtDate(d: string | Date): string {
+  const p = tashkentParts(new Date(d));
+  return `${p.day}/${p.month}/${p.year}`;
 }
 
 export function fmtPrice(n: number): string {

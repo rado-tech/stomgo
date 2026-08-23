@@ -4,13 +4,14 @@ import { useState } from "react";
 import { api, useUser } from "@/lib/client";
 import { Toast } from "@/components/ui";
 import TelegramLink from "@/components/TelegramLink";
+import PhoneChange from "@/components/PhoneChange";
 
 /**
  * Admin o'z login va parolini o'zgartiradi.
  * Ikki bosqich: joriy parol bilan so'rov → Telegram botga kelgan kod bilan tasdiq.
  */
 export default function AdminAccountPage() {
-  const { user } = useUser();
+  const { user, setUser } = useUser();
   const [step, setStep] = useState<"form" | "code">("form");
   const [form, setForm] = useState({ username: "", password: "", password2: "", currentPassword: "" });
   const [code, setCode] = useState("");
@@ -76,14 +77,29 @@ export default function AdminAccountPage() {
         kelgan kod bilan tasdiqlanadi.
       </p>
 
-      <div className="mt-4 rounded-2xl border border-zinc-100 bg-white p-4">
-        <p className="text-[12.5px] text-zinc-500">Joriy login</p>
-        <p className="font-mono text-[15px] font-bold">{user?.username ?? "—"}</p>
+      {/* Profil kartochkasi */}
+      <div className="mt-4 flex items-center gap-3 rounded-2xl border border-zinc-100 bg-white p-4">
+        <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-teal-600 text-[18px] font-bold text-white">
+          {(user?.name ?? user?.username ?? "A")[0].toUpperCase()}
+        </span>
+        <div className="min-w-0">
+          <p className="truncate text-[15px] font-bold">{user?.name ?? "Administrator"}</p>
+          <p className="truncate font-mono text-[13px] text-zinc-500">{user?.username ?? "—"}</p>
+        </div>
+      </div>
+
+      <div className="mt-3">
+        <PhoneChange
+          currentPhone={user?.phone ?? "—"}
+          onChanged={(phone) => user && setUser({ ...user, phone })}
+        />
       </div>
 
       <div className="mt-3">
         <TelegramLink variant="patient" />
       </div>
+
+      <h2 className="mb-2 mt-6 text-[15px] font-bold">Login va parol</h2>
 
       {step === "form" ? (
         <div className="mt-3 rounded-2xl border border-zinc-100 bg-white p-4">

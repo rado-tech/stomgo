@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { api } from "@/lib/client";
 import { Badge, Spinner, EmptyState, Toast, Cover } from "@/components/ui";
-import { SPECIALTY_LABELS, VERIFICATION_LABELS, fmtDate } from "@/lib/format";
+import { SPECIALTY_LABELS, fmtDate } from "@/lib/format";
 
 type Doc = {
   id: string; name: string; specialty: string; gender: string; experienceYears: number;
@@ -23,6 +23,8 @@ export default function AdminDoctorsPage() {
   const [items, setItems] = useState<Doc[] | null>(null);
   const [filter, setFilter] = useState("pending");
   const [busy, setBusy] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [q, setQ] = useState("");
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
 
   const load = useCallback(() => {
@@ -33,6 +35,11 @@ export default function AdminDoctorsPage() {
   }, [filter]);
 
   useEffect(() => { const t = setTimeout(load, 0); return () => clearTimeout(t); }, [load]);
+
+  const shown = (items ?? []).filter((d) => {
+    const t = q.trim().toLowerCase();
+    return !t || d.name.toLowerCase().includes(t) || d.clinic.toLowerCase().includes(t);
+  });
 
   const show = (msg: string, error?: boolean) => {
     setToast({ msg, error });
@@ -61,7 +68,7 @@ export default function AdminDoctorsPage() {
         «Klinika tasdiqlagan» yoki «Hujjatlari tekshirilgan».
       </p>
 
-      <div className="mt-4 flex gap-1.5">
+      <div className="mt-4 flex flex-wrap items-center gap-1.5">
         {FILTERS.map(([key, label]) => (
           <button
             key={key} onClick={() => setFilter(key)}
@@ -72,72 +79,98 @@ export default function AdminDoctorsPage() {
             {label}
           </button>
         ))}
+        <input
+          value={q} onChange={(e) => setQ(e.target.value)}
+          placeholder="Shifokor yoki klinika nomi"
+          className="ml-auto w-56 rounded-xl border border-zinc-200 px-3.5 py-2 text-[13px] outline-none focus:border-teal-500"
+        />
       </div>
 
       <div className="mt-4">
         {!items ? (
           <div className="flex justify-center py-16"><Spinner /></div>
-        ) : items.length === 0 ? (
+        ) : shown.length === 0 ? (
           <EmptyState icon="🩺" title="Shifokor yo'q" subtitle="Bu filtrda hech narsa topilmadi" />
         ) : (
-          <div className="grid gap-3 lg:grid-cols-2">
-            {items.map((d) => {
+          <div className="space-y-1.5">
+            {shown.map((d) => {
               const verified = d.verification === "DOC_VERIFIED";
+              const open = openId === d.id;
+              const noLicense = !d.licenseNo.trim();
               return (
-                <div key={d.id} className="rounded-2xl border border-zinc-100 bg-white p-4">
-                  <div className="flex items-start gap-3">
-                    <Cover hue={200} name={d.name} photoUrl={d.photoUrl} className="h-12 w-12 shrink-0 rounded-full" />
+                <div key={d.id} className="rounded-xl border border-zinc-100 bg-white">
+                  {/* Ixcham qator */}
+                  <button
+                    onClick={() => setOpenId(open ? null : d.id)}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                  >
+                    <Cover hue={200} name={d.name} photoUrl={d.photoUrl} className="h-9 w-9 shrink-0 rounded-full text-[13px]" />
                     <div className="min-w-0 flex-1">
-                      <div className="flex items-start justify-between gap-2">
-                        <p className="truncate font-bold">{d.name}</p>
-                        <Badge color={verified ? "teal" : "zinc"}>{VERIFICATION_LABELS[d.verification]}</Badge>
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-[14px] font-bold">{d.name}</span>
+                        {verified
+                          ? <Badge color="teal">Tekshirilgan</Badge>
+                          : noLicense
+                            ? <Badge color="amber">Diplom yo&apos;q</Badge>
+                            : <Badge color="zinc">Kutilmoqda</Badge>}
+                        {!d.isPublic && <Badge color="zinc">Yashirin</Badge>}
                       </div>
-                      <p className="text-[13px] text-zinc-500">
+                      <p className="truncate text-[12px] text-zinc-500">
                         {SPECIALTY_LABELS[d.specialty] ?? d.specialty} · {d.experienceYears} yil ·{" "}
-                        {d.gender === "FEMALE" ? "Ayol" : "Erkak"}
+                        {d.gender === "FEMALE" ? "Ayol" : "Erkak"} · {d.clinic}
                       </p>
-                      <Link href={`/klinika/${d.clinicSlug}`} className="text-[12.5px] font-semibold text-teal-700 hover:underline">
-                        {d.clinic}
-                      </Link>
                     </div>
-                  </div>
+                    <svg
+                      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      className={`shrink-0 text-zinc-400 transition ${open ? "rotate-180" : ""}`}
+                    >
+                      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
 
-                  <dl className="mt-3 space-y-1.5 rounded-xl bg-zinc-50 p-3 text-[13px]">
-                    <div className="flex gap-2">
-                      <dt className="w-24 shrink-0 text-zinc-500">Ta&apos;lim</dt>
-                      <dd className={d.education ? "" : "text-zinc-400"}>{d.education || "kiritilmagan"}</dd>
-                    </div>
-                    <div className="flex gap-2">
-                      <dt className="w-24 shrink-0 text-zinc-500">Diplom №</dt>
-                      <dd className={d.licenseNo ? "font-mono" : "text-zinc-400"}>{d.licenseNo || "kiritilmagan"}</dd>
-                    </div>
-                    <div className="flex gap-2">
-                      <dt className="w-24 shrink-0 text-zinc-500">Qo&apos;shilgan</dt>
-                      <dd className="text-zinc-500">{fmtDate(d.createdAt)}</dd>
-                    </div>
-                  </dl>
+                  {open && (
+                    <div className="border-t border-zinc-100 px-3 py-2.5">
+                      <dl className="mb-2.5 space-y-1 text-[12.5px]">
+                        <div className="flex gap-2">
+                          <dt className="w-24 shrink-0 text-zinc-400">Ta&apos;lim</dt>
+                          <dd className={d.education ? "" : "text-zinc-400"}>{d.education || "kiritilmagan"}</dd>
+                        </div>
+                        <div className="flex gap-2">
+                          <dt className="w-24 shrink-0 text-zinc-400">Diplom №</dt>
+                          <dd className={d.licenseNo ? "font-mono" : "text-zinc-400"}>{d.licenseNo || "kiritilmagan"}</dd>
+                        </div>
+                        <div className="flex gap-2">
+                          <dt className="w-24 shrink-0 text-zinc-400">Klinika</dt>
+                          <dd>
+                            <Link href={`/klinika/${d.clinicSlug}`} className="font-semibold text-teal-700 hover:underline">
+                              {d.clinic}
+                            </Link>
+                          </dd>
+                        </div>
+                        <div className="flex gap-2">
+                          <dt className="w-24 shrink-0 text-zinc-400">Qo&apos;shilgan</dt>
+                          <dd className="text-zinc-500">{fmtDate(d.createdAt)}</dd>
+                        </div>
+                      </dl>
 
-                  <div className="mt-3 flex flex-wrap items-center gap-2">
-                    {verified ? (
-                      <button
-                        onClick={() => setStatus(d, "CLINIC_CONFIRMED")} disabled={busy === d.id}
-                        className="rounded-xl border border-zinc-300 px-3.5 py-2 text-[12.5px] font-semibold text-zinc-700 disabled:opacity-50"
-                      >
-                        Tekshiruvni bekor qilish
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => setStatus(d, "DOC_VERIFIED")} disabled={busy === d.id || !d.licenseNo.trim()}
-                        className="rounded-xl bg-teal-600 px-3.5 py-2 text-[12.5px] font-bold text-white disabled:opacity-40"
-                      >
-                        Hujjatlari tekshirildi ✓
-                      </button>
-                    )}
-                    {!d.licenseNo.trim() && !verified && (
-                      <span className="text-[12px] text-amber-700">Diplom raqami yo&apos;q — klinikadan so&apos;rang</span>
-                    )}
-                    {!d.isPublic && <Badge color="zinc">Bemorga ko&apos;rinmaydi</Badge>}
-                  </div>
+                      <div className="flex flex-wrap items-center gap-2">
+                        {verified ? (
+                          <button onClick={() => setStatus(d, "CLINIC_CONFIRMED")} disabled={busy === d.id}
+                            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-[12px] font-semibold disabled:opacity-50">
+                            Tekshiruvni bekor qilish
+                          </button>
+                        ) : (
+                          <button onClick={() => setStatus(d, "DOC_VERIFIED")} disabled={busy === d.id || noLicense}
+                            className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
+                            Hujjatlari tekshirildi ✓
+                          </button>
+                        )}
+                        {noLicense && !verified && (
+                          <span className="text-[12px] text-amber-700">Diplom raqami yo&apos;q — klinikadan so&apos;rang</span>
+                        )}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}

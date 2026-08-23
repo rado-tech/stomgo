@@ -61,7 +61,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       showDoctors: c.showDoctors,
       reviews: c.reviews.map((r) => ({
         id: r.id, rating: r.rating, text: r.text, reply: r.reply,
-        author: r.user.name ? r.user.name[0] + "***" : "Bemor",
+        author: r.user.name?.trim() || "Bemor",
         date: r.createdAt,
       })),
       slots: generateSlots(c.workingHours),

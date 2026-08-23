@@ -1,0 +1,161 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+# Bir vaqtda bitta yugurish — eskilari bekor qilinadi
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NEXT_TELEMETRY_DISABLED: "1"
+
+jobs:
+  # ============ 1. Sayt: tip, lint, birlik testlari, yig'ilish ============
+  web:
+    name: Sayt
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Paketlarni o'rnatish
+        run: npm ci
+
+      - name: Prisma klientini yaratish
+        run: npx prisma generate
+
+      - name: TypeScript tekshiruvi
+        run: npm run typecheck
+
+      - name: ESLint
+        run: npm run lint
+
+      - name: Birlik testlari
+        run: npm test
+
+      - name: Next.js yig'ilishi
+        run: npm run build
+        env:
+          DATABASE_URL: postgresql://u:p@localhost:5432/db?schema=public
+          AUTH_SECRET: ci-uchun-uzun-tasodifiy-satr-kamida-32-belgi
+
+  # ============ 2. Mobil ilova: tip tekshiruvi ============
+  # (ESLint ildizdagi sozlamada, "Sayt" ishida mobil kodni ham tekshiradi)
+  mobile:
+    name: Mobil ilova
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - name: Paketlarni o'rnatish
+        working-directory: mobile
+        run: npm ci
+
+      - name: TypeScript tekshiruvi
+        working-directory: mobile
+        run: npx tsc --noEmit
+
+  # ============ 3. Xavfsizlik: haqiqiy server + haqiqiy baza ============
+  security:
+    name: Xavfsizlik (E2E)
+    runs-on: ubuntu-latest
+    needs: web
+
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_USER: stomgo
+          POSTGRES_PASSWORD: stomgo_ci
+          POSTGRES_DB: stomgo
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U stomgo"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 20
+
+    env:
+      DATABASE_URL: postgresql://stomgo:stomgo_ci@localhost:5432/stomgo?schema=public
+      AUTH_SECRET: ci-uchun-uzun-tasodifiy-satr-kamida-32-belgi
+      E2E_BASE: http://127.0.0.1:3000
+      NODE_ENV: production
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Paketlarni o'rnatish
+        run: npm ci
+
+      - name: Migratsiya va boshlang'ich ma'lumot
+        run: |
+          npx prisma migrate deploy
+          npx prisma generate
+          npm run db:seed
+
+      - name: Yig'ish
+        run: npm run build
+
+      - name: Serverni ko'tarish
+        run: |
+          npm run start > /tmp/next.log 2>&1 &
+          for i in $(seq 1 60); do
+            if curl -sf http://127.0.0.1:3000/api/health > /dev/null; then
+              echo "Server tayyor ($i s)"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Server ko'tarilmadi"; cat /tmp/next.log; exit 1
+
+      - name: Xavfsizlik testlari
+        run: npm run test:e2e
+
+      - name: Server loglari (xato bo'lganda)
+        if: failure()
+        run: cat /tmp/next.log || true
+
+  # ============ 4. Sirlar tasodifan git ga tushib qolmasin ============
+  secrets:
+    name: Sir qidirish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Taqiqlangan fayllar yo'qligini tekshirish
+        run: |
+          bad=$(git ls-files |
+            grep -Ei '(^|/)(\.env($|\.)|secrets/|.*\.keystore$|.*\.jks$|PAROLLAR|.*\.apk$|.*\.aab$)' |
+            grep -v '^\.env\.example$' || true)
+          if [ -n "$bad" ]; then
+            echo "Bu fayllar git da bo'lmasligi kerak:"; echo "$bad"; exit 1
+          fi
+          echo "Toza — maxfiy fayl topilmadi"
+
+      - name: Kalit qoldiqlarini qidirish
+        run: |
+          hits=$(git grep -nIE "(BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY|AIza[0-9A-Za-z_-]{35}|sk-[A-Za-z0-9]{32,}|[0-9]{8,10}:AA[0-9A-Za-z_-]{33})" -- . ':!*.test.ts' ':!*.e2e.ts' ':!.github/*' || true)
+          if [ -n "$hits" ]; then
+            echo "Kodda kalitga o'xshash satr topildi:"; echo "$hits"; exit 1
+          fi
+          echo "Toza — kalit topilmadi"

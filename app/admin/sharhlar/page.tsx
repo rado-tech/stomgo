@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Spinner, Stars, EmptyState, Toast } from "@/components/ui";
+import { fmtDateTime } from "@/lib/format";
 
 type Rev = { id: string; rating: number; text: string; author: string; clinicName: string; date: string };
 
@@ -39,7 +40,7 @@ export default function AdminReviewsPage() {
                 <p className="font-semibold">{r.clinicName}</p>
                 <Stars value={r.rating} />
               </div>
-              <p className="mt-1 text-[12.5px] text-zinc-400">{r.author} · {new Date(r.date).toLocaleString("uz-UZ")}</p>
+              <p className="mt-1 text-[12.5px] text-zinc-400">{r.author} · {fmtDateTime(r.date)}</p>
               {r.text && <p className="mt-2 text-[14px]">{r.text}</p>}
               <div className="mt-3 flex gap-2">
                 <button onClick={() => act(r.id, "approve")} className="rounded-lg bg-emerald-600 px-4 py-1.5 text-[13px] font-bold text-white">Tasdiqlash</button>
