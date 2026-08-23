@@ -1,10 +1,12 @@
 import { db } from "./db";
+import { fcmSend } from "./fcm";
 
 /**
  * Push bildirishnoma yuborish.
  *
  * Ikki kanal qo'llab-quvvatlanadi:
- *  - EXPO — Android/iOS ilovasi (Expo push xizmati orqali)
+ *  - FCM  — Android ilovasi, to'g'ridan-to'g'ri Firebase orqali (Expo hisobi kerak emas)
+ *  - EXPO — Expo push xizmati orqali (projectId sozlangan bo'lsa)
  *  - WEB  — brauzer/PWA (VAPID bilan Web Push)
  *
  * Ikkalasi ham ixtiyoriy: kaliti yo'q bo'lsa, o'sha kanal jimgina o'tkazib yuboriladi
@@ -107,6 +109,8 @@ export async function pushToUser(userId: string, p: PushPayload) {
       devices.filter((d) => d.kind === "WEB").map((d) => ({ token: d.token, p256dh: d.p256dh, auth: d.auth })),
       p
     ),
+    fcmSend(devices.filter((d) => d.kind === "FCM").map((d) => d.token), p)
+      .then(({ dead }) => Promise.all(dead.map(dropToken))),
   ]);
 }
 

@@ -9,10 +9,22 @@ import { publicOrigin } from "@/lib/origin";
  */
 const UPSTREAM = "https://tiles.openfreemap.org";
 
+/**
+ * Plitka manzillariga qo'shiladigan versiya.
+ * Plitkalar 7 kunga "immutable" keshlanadi — proksida xato bo'lsa, tuzatgandan
+ * keyin ham brauzer eski buzuq nusxani ishlatadi. Versiyani oshirish kesh
+ * kalitini yangilaydi va brauzer qaytadan yuklaydi.
+ */
+const TILE_VERSION = "2";
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
   const safe = path.filter((p) => p !== ".." && !p.includes("\\"));
-  const qs = req.nextUrl.search;
+
+  // O'zimizning versiya parametrini upstream'ga yubormaymiz
+  const q = new URLSearchParams(req.nextUrl.search);
+  q.delete("v");
+  const qs = q.toString() ? `?${q.toString()}` : "";
   const url = `${UPSTREAM}/${safe.map(encodeURIComponent).join("/")}${qs}`;
 
   try {
@@ -30,7 +42,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
     if (type.includes("json")) {
       const text = await upstream.text();
       const origin = publicOrigin(req);
-      const rewritten = text.replaceAll(`${UPSTREAM}/`, `${origin}/api/map/t/`);
+      const rewritten = text
+        .replaceAll(`${UPSTREAM}/`, `${origin}/api/map/t/`)
+        // Plitka shablonlariga versiya qo'shamiz (kesh yangilanishi uchun)
+        .replaceAll("{y}.pbf", `{y}.pbf?v=${TILE_VERSION}`)
+        .replaceAll("{y}.png", `{y}.png?v=${TILE_VERSION}`);
       return new NextResponse(rewritten, {
         headers: {
           "Content-Type": "application/json",
@@ -39,11 +55,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ path
       });
     }
 
+    // MUHIM: fetch() javobni O'ZI ochib beradi (gzip/br). Shuning uchun
+    // upstream'ning Content-Encoding sarlavhasini UZATMAYMIZ — aks holda brauzer
+    // siqilmagan ma'lumotni gunzip qilmoqchi bo'lib xato beradi va plitka chizilmaydi.
     const buf = await upstream.arrayBuffer();
     return new NextResponse(buf, {
       headers: {
         "Content-Type": type,
-        "Content-Encoding": upstream.headers.get("content-encoding") ?? "",
+        "Content-Length": String(buf.byteLength),
         "Cache-Control": "public, max-age=604800, immutable",
       },
     });

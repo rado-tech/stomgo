@@ -126,11 +126,30 @@ export default function DoctorsPage() {
             ))}
           </div>
           <select
-            value={form.specialty} onChange={(e) => setForm((f) => ({ ...f, specialty: e.target.value }))}
+            value={SPECIALTIES.includes(form.specialty) ? form.specialty : "__custom"}
+            onChange={(e) => setForm((f) => ({ ...f, specialty: e.target.value === "__custom" ? "" : e.target.value }))}
             className="w-full rounded-xl border border-zinc-200 px-3.5 py-2.5 text-[14px] outline-none"
           >
             {SPECIALTIES.map((s) => <option key={s} value={s}>{SPECIALTY_LABELS[s]}</option>)}
+            <option value="__custom">Boshqa (o&apos;zim yozaman)</option>
           </select>
+
+          {!SPECIALTIES.includes(form.specialty) && (
+            <div>
+              <input
+                value={form.specialty}
+                onChange={(e) => setForm((f) => ({ ...f, specialty: e.target.value.slice(0, 30) }))}
+                placeholder="Mutaxassislik nomi (masalan: Parodontolog)"
+                autoFocus
+                className="w-full rounded-xl border border-teal-500 px-3.5 py-2.5 text-[14px] outline-none"
+              />
+              <p className="mt-1 text-[11.5px] leading-relaxed text-zinc-400">
+                Ro&apos;yxatdagi variantlarni AI maslahatchi taniydi. Qo&apos;lda yozilgani bemorga
+                ko&apos;rinadi, lekin AI tavsiyasida hisobga olinmaydi — bolalar shifokori bo&apos;lsa
+                ro&apos;yxatdan &laquo;Bolalar stomatologi&raquo;ni tanlang.
+              </p>
+            </div>
+          )}
           <label className="block text-[13px] text-zinc-500">
             Tajriba (yil)
             <input
@@ -155,7 +174,7 @@ export default function DoctorsPage() {
               className="h-4 w-4 accent-teal-600" />
             Bemorlar ilovasida ko&apos;rsatilsin
           </label>
-          <button disabled={busy || !form.name.trim()} onClick={save}
+          <button disabled={busy || !form.name.trim() || !form.specialty.trim()} onClick={save}
             className="w-full rounded-2xl bg-teal-600 py-3 font-bold text-white disabled:opacity-40">
             Saqlash
           </button>

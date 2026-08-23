@@ -8,7 +8,9 @@ COPY prisma ./prisma
 RUN npm ci --ignore-scripts && npx prisma generate
 
 # "build" bosqichi to'liq node_modules bilan — migrate va bot servislari ham shundan foydalanadi
+# build bosqichi zaxira nusxa (pg_dump) uchun ham ishlatiladi
 FROM base AS build
+RUN apk add --no-cache postgresql17-client
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1

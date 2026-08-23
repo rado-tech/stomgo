@@ -2,8 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireRole, unauthorized } from "@/lib/auth";
 import { audit } from "@/lib/audit";
+import { CATEGORIES } from "@/lib/categories";
 
-const CATEGORIES = ["DIAGNOSTIKA", "TERAPIYA", "GIGIENA", "ESTETIKA", "XIRURGIYA", "ORTOPEDIYA", "ORTODONTIYA", "BOLALAR", "BOSHQA"];
+
 
 export async function GET() {
   const user = await requireRole("CLINIC");
@@ -28,6 +29,24 @@ export async function GET() {
   });
 }
 
+/** Narx chegaralari (so'mda) — Int ustunidan oshmasligi ham shu yerda kafolatlanadi */
+const PRICE_MIN = 1_000;
+const PRICE_MAX = 500_000_000;
+
+/** Narxni tekshiradi: xato bo'lsa SABABINI qaytaradi, jimgina to'g'irlamaydi */
+function checkPrice(raw: unknown, label: string): { ok: true; value: number } | { ok: false; error: string } {
+  const text = String(raw ?? "").trim();
+  if (!text) return { ok: false, error: `${label} kiritilmagan` };
+  if (!/^\d+$/.test(text)) {
+    return { ok: false, error: `${label} faqat butun son bo'lishi kerak (manfiy son, kasr va harf bo'lmaydi)` };
+  }
+  const n = Number(text);
+  if (!Number.isSafeInteger(n)) return { ok: false, error: `${label} juda katta` };
+  if (n < PRICE_MIN) return { ok: false, error: `${label} kamida ${PRICE_MIN.toLocaleString("ru-RU")} so'm bo'lsin` };
+  if (n > PRICE_MAX) return { ok: false, error: `${label} ko'pi bilan ${PRICE_MAX.toLocaleString("ru-RU")} so'm bo'lsin` };
+  return { ok: true, value: n };
+}
+
 export async function PUT(req: NextRequest) {
   const user = await requireRole("CLINIC");
   if (!user?.clinicId) return unauthorized();
@@ -35,21 +54,48 @@ export async function PUT(req: NextRequest) {
   const items: { serviceId: string; enabled: boolean; priceMin: number; priceMax: number }[] =
     Array.isArray(body.services) ? body.services : [];
 
+  // Avval HAMMASINI tekshiramiz — bittasi xato bo'lsa hech narsa saqlanmaydi
+  const valid: { serviceId: string; priceMin: number; priceMax: number }[] = [];
+  const toRemove: string[] = [];
+
   for (const item of items) {
-    const priceMin = Math.max(0, parseInt(String(item.priceMin), 10) || 0);
-    const priceMax = Math.max(priceMin, parseInt(String(item.priceMax), 10) || 0);
-    if (item.enabled && priceMin > 0) {
-      await db.clinicService.upsert({
-        where: { clinicId_serviceId: { clinicId: user.clinicId, serviceId: item.serviceId } },
-        create: { clinicId: user.clinicId, serviceId: item.serviceId, priceMin, priceMax },
-        update: { priceMin, priceMax },
-      });
-    } else if (!item.enabled) {
-      await db.clinicService.deleteMany({
-        where: { clinicId: user.clinicId, serviceId: item.serviceId },
-      });
+    if (!item.enabled) { toRemove.push(item.serviceId); continue; }
+
+    const names = await db.serviceCatalog.findUnique({ where: { id: item.serviceId }, select: { name: true } });
+    const label = names?.name ?? "Xizmat";
+
+    const min = checkPrice(item.priceMin, `«${label}» — eng past narx`);
+    if (!min.ok) return NextResponse.json({ error: min.error }, { status: 400 });
+
+    // "gacha" bo'sh bo'lsa — "dan" bilan bir xil deb olamiz
+    const rawMax = String(item.priceMax ?? "").trim();
+    let maxValue = min.value;
+    if (rawMax && rawMax !== "0") {
+      const max = checkPrice(item.priceMax, `«${label}» — eng yuqori narx`);
+      if (!max.ok) return NextResponse.json({ error: max.error }, { status: 400 });
+      maxValue = max.value;
     }
+    if (maxValue < min.value) {
+      return NextResponse.json(
+        { error: `«${label}»: yuqori narx (${maxValue.toLocaleString("ru-RU")}) past narxdan (${min.value.toLocaleString("ru-RU")}) kichik bo'lmasin` },
+        { status: 400 }
+      );
+    }
+
+    valid.push({ serviceId: item.serviceId, priceMin: min.value, priceMax: maxValue });
   }
+
+  // Tekshiruvdan o'tgach — bir tranzaksiyada yozamiz
+  await db.$transaction([
+    ...valid.map((v) =>
+      db.clinicService.upsert({
+        where: { clinicId_serviceId: { clinicId: user.clinicId!, serviceId: v.serviceId } },
+        create: { clinicId: user.clinicId!, serviceId: v.serviceId, priceMin: v.priceMin, priceMax: v.priceMax },
+        update: { priceMin: v.priceMin, priceMax: v.priceMax },
+      })
+    ),
+    db.clinicService.deleteMany({ where: { clinicId: user.clinicId!, serviceId: { in: toRemove } } }),
+  ]);
   audit({ actorId: user.id, actorRole: "CLINIC", actorName: user.name ?? "Klinika", action: "SERVICES_UPDATE", entity: "Clinic", entityId: user.clinicId });
   return NextResponse.json({ ok: true });
 }
@@ -62,26 +108,54 @@ export async function POST(req: NextRequest) {
 
   const name = String(body.name ?? "").trim().slice(0, 80);
   const category = CATEGORIES.includes(body.category) ? String(body.category) : "BOSHQA";
-  const priceMin = Math.max(1, parseInt(String(body.priceMin), 10) || 0);
-  const priceMax = Math.max(priceMin, parseInt(String(body.priceMax), 10) || priceMin);
 
-  if (!name || !priceMin) {
-    return NextResponse.json({ error: "Xizmat nomi va narxi majburiy" }, { status: 400 });
+  if (!name) {
+    return NextResponse.json({ error: "Xizmat nomini kiriting" }, { status: 400 });
   }
+
+  const min = checkPrice(body.priceMin, "Eng past narx");
+  if (!min.ok) return NextResponse.json({ error: min.error }, { status: 400 });
+
+  const rawMax = String(body.priceMax ?? "").trim();
+  let priceMax = min.value;
+  if (rawMax) {
+    const max = checkPrice(body.priceMax, "Eng yuqori narx");
+    if (!max.ok) return NextResponse.json({ error: max.error }, { status: 400 });
+    priceMax = max.value;
+  }
+  if (priceMax < min.value) {
+    return NextResponse.json(
+      { error: `Yuqori narx (${priceMax.toLocaleString("ru-RU")}) past narxdan (${min.value.toLocaleString("ru-RU")}) kichik bo'lmasin` },
+      { status: 400 }
+    );
+  }
+  const priceMin = min.value;
 
   const customCount = await db.serviceCatalog.count({ where: { clinicId: user.clinicId } });
   if (customCount >= 30) {
     return NextResponse.json({ error: "Maxsus xizmatlar soni 30 tadan oshmasin" }, { status: 400 });
   }
 
-  const svc = await db.serviceCatalog.create({
-    data: {
-      code: `c_${user.clinicId.slice(-6)}_${Date.now().toString(36)}`,
-      name, category, clinicId: user.clinicId,
-    },
+  const dup = await db.serviceCatalog.findFirst({
+    where: { clinicId: user.clinicId, name: { equals: name, mode: "insensitive" } },
   });
-  await db.clinicService.create({
-    data: { clinicId: user.clinicId, serviceId: svc.id, priceMin, priceMax },
+  if (dup) {
+    return NextResponse.json({ error: `«${name}» nomli xizmat allaqachon qo'shilgan` }, { status: 400 });
+  }
+
+  // Katalog yozuvi va narx BIRGA yaratiladi — biri yiqilsa ikkinchisi ham qolmaydi
+  // (avval narxsiz "yetim" xizmat qolib ketardi)
+  const clinicId = user.clinicId;
+  await db.$transaction(async (tx) => {
+    const svc = await tx.serviceCatalog.create({
+      data: {
+        code: `c_${clinicId.slice(-6)}_${Date.now().toString(36)}`,
+        name, category, clinicId,
+      },
+    });
+    await tx.clinicService.create({
+      data: { clinicId, serviceId: svc.id, priceMin, priceMax },
+    });
   });
 
   audit({ actorId: user.id, actorRole: "CLINIC", actorName: user.name ?? "Klinika", action: "SERVICE_CUSTOM_ADD", entity: "Clinic", entityId: user.clinicId, meta: { name, category } });

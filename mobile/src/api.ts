@@ -73,21 +73,68 @@ export async function uploadImage(
 ): Promise<string> {
   const base = await getBaseUrl();
   const token = await getToken();
-  const name = uri.split("/").pop() || "photo.jpg";
-  const ext = (name.split(".").pop() || "jpg").toLowerCase();
-  const mime = ext === "png" ? "image/png" : ext === "webp" ? "image/webp" : "image/jpeg";
 
-  const form = new FormData();
-  // React Native'da fayl shu ko'rinishda uzatiladi
-  form.append("file", { uri, name, type: mime } as unknown as Blob);
-  Object.entries(fields).forEach(([k, v]) => form.append(k, v));
+  // Kamera surati 5-12 MB bo'lishi mumkin — qurilmaning o'zida kichraytiramiz.
+  // Tashxis uchun 1600px yetarli, hajm ~300 KB ga tushadi.
+  //
+  // Yuborish usuli: multipart EMAS, base64 JSON. React Native'da multipart fayl
+  // URI'si bilan ishlashda "Network request failed" tez-tez uchraydi (URI sxemasi,
+  // vaqtinchalik fayl, tunnel orqali chunked uzatish). JSON ishonchliroq.
+  let dataBase64: string | null = null;
+  try {
+    const { ImageManipulator, SaveFormat } = await import("expo-image-manipulator");
+    const ctx = ImageManipulator.manipulate(uri).resize({ width: 1600 });
+    const rendered = await ctx.renderAsync();
+    const out = await rendered.saveAsync({ compress: 0.75, format: SaveFormat.JPEG, base64: true });
+    if (out?.base64) dataBase64 = out.base64;
+  } catch {
+    // pastda zaxira yo'l bor
+  }
 
-  const res = await fetch(`${base}/api/upload`, {
-    method: "POST",
-    headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) },
-    body: form,
-  });
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? "Rasm yuklanmadi");
-  return (data as { url: string }).url;
+  // Zaxira: kichraytirib bo'lmasa faylni o'zini o'qiymiz
+  if (!dataBase64) {
+    try {
+      const FS = await import("expo-file-system/legacy");
+      dataBase64 = await FS.readAsStringAsync(uri, { encoding: "base64" });
+    } catch {
+      throw new Error("Rasmni o'qib bo'lmadi. Boshqa rasm tanlab ko'ring.");
+    }
+  }
+
+  // ~8 MB serverdagi chegara; base64 ~33% kattaroq bo'ladi
+  if (dataBase64.length > 10_000_000) {
+    throw new Error("Rasm juda katta. Kichikroq rasm tanlang.");
+  }
+
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 90_000);
+
+  let res: Response;
+  try {
+    res = await fetch(`${base}/api/upload`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ ...fields, dataBase64 }),
+      signal: ctrl.signal,
+    });
+  } catch (e) {
+    clearTimeout(timer);
+    const aborted = (e as Error)?.name === "AbortError";
+    throw new Error(
+      aborted
+        ? "Internet sekin — rasm yuborilmadi. Qayta urining."
+        : "Serverga ulanib bo'lmadi. Internetni yoki Profil > Server sozlamasini tekshiring."
+    );
+  }
+  clearTimeout(timer);
+
+  const data = (await res.json().catch(() => ({}))) as { error?: string; url?: string };
+  if (!res.ok) throw new Error(data.error ?? `Rasm yuklanmadi (${res.status})`);
+  if (!data.url) throw new Error("Server rasm manzilini qaytarmadi");
+  return data.url;
 }
+
+

@@ -56,7 +56,6 @@ export default function ClinicReviewsPage() {
               {r.reply ? (
                 <div className="mt-2.5 rounded-xl bg-teal-50 p-3 text-[13.5px]">
                   <b className="text-teal-800">Javobingiz:</b> {r.reply}
-                  <button onClick={() => { setReplyFor(r.id); setReplyText(r.reply); }} className="ml-2 text-[12px] font-semibold text-teal-600 underline">tahrirlash</button>
                 </div>
               ) : replyFor === r.id ? (
                 <div className="mt-2.5">

@@ -9,7 +9,7 @@ export async function POST(req: NextRequest) {
 
   const b = await req.json().catch(() => ({}));
   const token = String(b.token ?? "").trim();
-  const kind = b.kind === "WEB" ? "WEB" : "EXPO";
+  const kind = b.kind === "WEB" ? "WEB" : b.kind === "FCM" ? "FCM" : "EXPO";
   const platform = String(b.platform ?? "").slice(0, 20);
   const p256dh = String(b.p256dh ?? "");
   const auth = String(b.auth ?? "");

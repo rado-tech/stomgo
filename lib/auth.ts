@@ -59,6 +59,9 @@ export async function requireUser() {
   const s = await getSession();
   if (!s) return null;
   const user = await db.user.findUnique({ where: { id: s.uid } });
+  if (!user) return null;
+  // Admin bloklagan bo'lsa — amaldagi tokeni bo'lsa ham kira olmaydi
+  if (user.blockedAt) return null;
   return user;
 }
 

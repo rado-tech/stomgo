@@ -41,7 +41,7 @@ async function ensureChannel() {
  * `silent: true` — ruxsat SO'RALMAYDI: allaqachon berilgan bo'lsagina tokenni yangilaydi.
  * Ilova ochilishida shu rejim ishlatiladi, ruxsat esa Profil bo'limidagi tugma orqali so'raladi.
  */
-export async function registerPush(opts?: { silent?: boolean }): Promise<{ ok: boolean; reason?: string }> {
+export async function registerPush(opts?: { silent?: boolean }): Promise<{ ok: boolean; kind?: string; reason?: string }> {
   try {
     if (!Device.isDevice) return { ok: false, reason: "Emulyatorda push ishlamaydi" };
     if (!(await getToken())) return { ok: false, reason: "Avval tizimga kiring" };
@@ -61,20 +61,38 @@ export async function registerPush(opts?: { silent?: boolean }): Promise<{ ok: b
       (Constants.expoConfig?.extra as { eas?: { projectId?: string } } | undefined)?.eas?.projectId ??
       (Constants as unknown as { easConfig?: { projectId?: string } }).easConfig?.projectId;
 
-    const t = await Notifications.getExpoPushTokenAsync(projectId ? { projectId } : undefined);
-    const token = t.data;
-    if (!token) return { ok: false, reason: "Token olinmadi" };
+    let token: string | null = null;
+    let kind: "EXPO" | "FCM" = "FCM";
 
-    await api("/api/push", {
-      json: { token, kind: "EXPO", platform: Platform.OS },
-    });
+    // 1) Expo push xizmati — faqat projectId sozlangan bo'lsa
+    if (projectId) {
+      try {
+        const t = await Notifications.getExpoPushTokenAsync({ projectId });
+        if (t?.data) { token = t.data; kind = "EXPO"; }
+      } catch {
+        // Expo yo'li ishlamasa — pastdagi to'g'ridan FCM yo'liga o'tamiz
+      }
+    }
+
+    // 2) To'g'ridan FCM tokeni — google-services.json yetarli, Expo hisobi shart emas
+    if (!token) {
+      const d = await Notifications.getDevicePushTokenAsync();
+      if (typeof d?.data === "string" && d.data) { token = d.data; kind = "FCM"; }
+    }
+
+    if (!token) return { ok: false, reason: "Push tokeni olinmadi" };
+
+    await api("/api/push", { json: { token, kind, platform: Platform.OS } });
     await AsyncStorage.setItem(KEY, token);
-    return { ok: true };
+    return { ok: true, kind };
   } catch (e) {
     // Ko'p uchraydigan sabab: google-services.json yo'q (FCM sozlanmagan)
     const msg = (e as Error)?.message ?? "";
-    if (/FirebaseApp|google-services|FCM/i.test(msg)) {
+    if (/FirebaseApp|google-services|FCM|SERVICE_NOT_AVAILABLE|MISSING_INSTANCEID/i.test(msg)) {
       return { ok: false, reason: "Firebase (FCM) sozlanmagan" };
+    }
+    if (/Network|Failed to fetch|ulanib/i.test(msg)) {
+      return { ok: false, reason: "Serverga ulanib bo'lmadi" };
     }
     return { ok: false, reason: "Push yoqilmadi" };
   }

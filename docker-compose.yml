@@ -45,9 +45,12 @@ services:
       - VAPID_PRIVATE_KEY=${VAPID_PRIVATE_KEY:-}
       - VAPID_SUBJECT=${VAPID_SUBJECT:-mailto:admin@stomgo.uz}
       - NEXT_PUBLIC_VAPID_PUBLIC_KEY=${VAPID_PUBLIC_KEY:-}
+      # Firebase Cloud Messaging (push) — service account JSON fayli
+      - FCM_SERVICE_ACCOUNT=${FCM_SERVICE_ACCOUNT:-}
       - UPLOADS_DIR=/app/uploads
     volumes:
       - uploads:/app/uploads
+      - ./secrets:/app/secrets:ro
     depends_on:
       db:
         condition: service_healthy
@@ -76,6 +79,27 @@ services:
       migrate:
         condition: service_completed_successfully
     restart: on-failure
+
+  # Kunlik avtomatik zaxira: baza (pg_dump.gz) + yuklangan rasmlar
+  backup:
+    build:
+      context: .
+      target: build
+    command: npx tsx scripts/backup.ts --daemon
+    environment:
+      - DATABASE_URL=postgresql://stomgo:${DB_PASSWORD}@db:5432/stomgo?schema=public
+      - BACKUP_DIR=/backups
+      - BACKUP_KEEP=${BACKUP_KEEP:-14}
+      - UPLOADS_DIR=/app/uploads
+      # Konteyner ichida pg_dump bor — docker zaxira yo'li kerak emas
+      - PATH=/usr/local/bin:/usr/bin:/bin
+    volumes:
+      - ./backups:/backups
+      - uploads:/app/uploads:ro
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
 
   caddy:
     image: caddy:2-alpine

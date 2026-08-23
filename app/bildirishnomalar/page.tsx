@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, useUser } from "@/lib/client";
 import { Spinner, EmptyState } from "@/components/ui";
 import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/TopNav";
 import { fmtDateTime } from "@/lib/format";
 
 type Notif = { id: string; title: string; body: string; link: string; readAt: string | null; createdAt: string };
@@ -34,6 +35,8 @@ export default function NotificationsPage() {
 
   if (!user) {
     return (
+      <>
+      <TopNav />
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center px-6 pb-20">
         <EmptyState icon="🔔" title="Bildirishnomalarni ko'rish uchun kiring" />
         <Link href="/kirish?next=/bildirishnomalar" className="w-full rounded-2xl bg-teal-600 py-3.5 text-center font-bold text-white">
@@ -41,11 +44,14 @@ export default function NotificationsPage() {
         </Link>
         <BottomNav />
       </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-2xl px-4 pb-24 pt-5">
+    <>
+    <TopNav />
+    <div className="mx-auto min-h-dvh w-full max-w-3xl px-4 pb-24 pt-5 md:pb-12">
       <div className="flex items-center gap-3">
         <button onClick={() => (window.history.length > 2 ? router.back() : router.push("/"))}
           className="rounded-full p-2 text-lg font-bold hover:bg-zinc-100" aria-label="Orqaga">←</button>
@@ -77,5 +83,6 @@ export default function NotificationsPage() {
 
       <BottomNav />
     </div>
+    </>
   );
 }

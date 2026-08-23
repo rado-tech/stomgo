@@ -8,22 +8,22 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  */
 
 const LIGHT = {
-  // Sirtlar
-  bg: "#f2f3f5",        // umumiy fon
+  // Sirtlar — fon brend rangi bilan bir oilada (sovuq, ozgina yashil tovlanish)
+  bg: "#f1f4f4",        // umumiy fon
   card: "#ffffff",      // kartochka
-  pill: "#eceef1",      // tugma/qidiruv "hab"lari
+  pill: "#e8edec",      // tugma/qidiruv "hab"lari
   pillActive: "#0f766e",
-  softer: "#f7f8f9",
+  softer: "#f7f9f9",
 
-  // Matn
-  text: "#0f1417",
-  ink2: "#3a4449",
-  ink3: "#525d63",
-  mut: "#6b767c",
-  faint: "#9aa4a9",
+  // Matn — sof qora emas, ko'zga yumshoq
+  text: "#0d1a19",
+  ink2: "#33413f",
+  ink3: "#4d5a58",
+  mut: "#6a7674",
+  faint: "#98a3a1",
 
-  line: "#e5e8ea",
-  starOff: "#dfe4e6",
+  line: "#e2e8e7",
+  starOff: "#dbe3e1",
 
   // Brend
   brand: "#0f766e",
@@ -31,23 +31,23 @@ const LIGHT = {
   brandLight: "#d7f5f1",
   onBrand: "#ffffff",
 
-  // Aksent (VIP, muhim belgilar)
-  accent: "#f5b301",
-  accentSoft: "#fff4d1",
+  // Aksent (VIP, muhim belgilar) — teal bilan muvozanatda, neon emas
+  accent: "#e0a106",
+  accentSoft: "#fff3d6",
   accentInk: "#7a5600",
 
   outlinePrimary: "#0f766e",
-  outlineAccent: "#f5b301",
+  outlineAccent: "#e0a106",
 
-  red: "#e5484d",
+  red: "#d93a40",
   redBg: "#fdf0f0",
-  amber: "#c77700",
-  amberBg: "#fff6e5",
+  amber: "#b87400",
+  amberBg: "#fff5e3",
   amberInk: "#7a5600",
   green: "#0b8a5a",
-  greenBg: "#e7f7ef",
+  greenBg: "#e6f6ee",
   sky: "#0b7fc4",
-  skyBg: "#e9f4fc",
+  skyBg: "#e8f3fb",
   violet: "#6d46c8",
   violetBg: "#f0ebfd",
   pink: "#c92c7f",
@@ -55,20 +55,21 @@ const LIGHT = {
 };
 
 const DARK: typeof LIGHT = {
-  bg: "#0c0d0f",
-  card: "#1a1c1f",
-  pill: "#25282c",
+  // Sof qora emas — brend bilan bir oiladagi to'q slate (ko'zni charchatmaydi)
+  bg: "#0d1211",
+  card: "#161d1c",
+  pill: "#222b2a",
   pillActive: "#2dd4bf",
-  softer: "#141618",
+  softer: "#121817",
 
   text: "#ffffff",
-  ink2: "#eef1f2",
-  ink3: "#dbe0e2",
-  mut: "#b0b8bc",
-  faint: "#828c91",
+  ink2: "#e9efee",
+  ink3: "#d3dbda",
+  mut: "#a8b3b1",
+  faint: "#7d8886",
 
-  line: "#2e3237",
-  starOff: "#3d444a",
+  line: "#2b3634",
+  starOff: "#3a4644",
 
   brand: "#2dd4bf",
   brandDark: "#5eead4",

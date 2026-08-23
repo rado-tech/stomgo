@@ -6,6 +6,7 @@ import { api, useGeo } from "@/lib/client";
 import { Badge, Spinner, Stars } from "@/components/ui";
 import ThemeToggle from "@/components/ThemeToggle";
 import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/TopNav";
 import { fmtPrice, fmtKm, SPECIALTY_LABELS } from "@/lib/format";
 
 type Result = {
@@ -94,7 +95,9 @@ export default function TriagePage() {
   if (result) {
     const ui = URGENCY_UI[result.urgency];
     return (
-      <div className="mx-auto min-h-dvh w-full max-w-md px-4 pb-24 pt-6">
+      <>
+      <TopNav />
+      <div className="mx-auto min-h-dvh w-full max-w-md px-4 pb-24 pt-6 md:max-w-2xl md:pb-12 md:pt-8">
         <div className={`rounded-2xl border p-4 ${ui.light}`}>
           <span className={`inline-block rounded-full px-3 py-1 text-[13px] font-bold text-white ${ui.color}`}>{ui.label}</span>
           {result.urgency === "EMERGENCY" ? (
@@ -152,14 +155,17 @@ export default function TriagePage() {
         </button>
         <BottomNav />
       </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md px-4 pb-24 pt-6">
+    <>
+    <TopNav />
+    <div className="mx-auto min-h-dvh w-full max-w-md px-4 pb-24 pt-6 md:max-w-2xl md:pb-12 md:pt-8">
       <div className="flex items-center justify-between">
         <h1 className="text-xl font-extrabold">AI maslahat</h1>
-        <ThemeToggle />
+        <span className="md:hidden"><ThemeToggle /></span>
       </div>
       <p className="mt-1 text-[13.5px] text-zinc-500">
         Savollarga javob bering — qanchalik shoshilinch ekanini, qaysi mutaxassis kerakligini va taxminiy narxni aytamiz.
@@ -285,5 +291,6 @@ export default function TriagePage() {
 
       <BottomNav />
     </div>
+    </>
   );
 }

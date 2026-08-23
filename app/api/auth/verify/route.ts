@@ -29,6 +29,9 @@ export async function POST(req: NextRequest) {
   await db.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } });
 
   let user = await db.user.findUnique({ where: { phone } });
+  if (user?.blockedAt) {
+    return NextResponse.json({ error: "Hisobingiz bloklangan. Qo'llab-quvvatlash bilan bog'laning." }, { status: 403 });
+  }
   if (!user) {
     user = await db.user.create({ data: { phone, name: name || null, role: "PATIENT" } });
   } else if (name && !user.name) {

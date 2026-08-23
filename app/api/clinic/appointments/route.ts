@@ -35,8 +35,8 @@ export async function GET() {
 
   const clinic = await db.clinic.findUnique({
     where: { id: user.clinicId },
-    select: { checkinCode: true, name: true },
+    select: { checkinCode: true, name: true, slug: true },
   });
 
-  return NextResponse.json({ items: mapped, checkinCode: clinic?.checkinCode, clinicName: clinic?.name });
+  return NextResponse.json({ items: mapped, clinicName: clinic?.name, clinicSlug: clinic?.slug });
 }

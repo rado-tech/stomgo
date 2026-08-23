@@ -20,17 +20,30 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const clinicId = String(body.clinicId ?? "");
   const days = Math.min(365, Math.max(1, parseInt(String(body.days), 10) || 30));
-  const position = body.position === 2 ? 2 : 1;
+  const position = Math.min(50, Math.max(1, parseInt(String(body.position), 10) || 1));
 
   const clinic = await db.clinic.findUnique({ where: { id: clinicId } });
   if (!clinic) return NextResponse.json({ error: "Klinika topilmadi" }, { status: 404 });
+  if (clinic.deactivatedAt) {
+    return NextResponse.json({ error: "Shartnomasi bekor qilingan klinikaga VIP berilmaydi" }, { status: 400 });
+  }
+  // VIP — pullik xizmat, shuning uchun faqat PRO tarifdagi klinikaga
+  if (clinic.tier !== "PRO") {
+    return NextResponse.json(
+      { error: `${clinic.name} FREE tarifda. Avval PRO tarifga o'tkazing.` },
+      { status: 400 }
+    );
+  }
 
-  // Bir vaqtda bitta pozitsiyada faqat bitta faol slot
+  // Ayni klinikaga takroriy faol slot berilmasin (pozitsiyalar soni cheklanmagan)
   const active = await db.promoSlot.findFirst({
-    where: { position, endsAt: { gte: new Date() } },
+    where: { clinicId, endsAt: { gte: new Date() } },
   });
   if (active) {
-    return NextResponse.json({ error: `${position}-pozitsiyada faol slot bor. Avval uni tugating.` }, { status: 409 });
+    return NextResponse.json(
+      { error: "Bu klinikada faol VIP slot bor. Avval uni tugating." },
+      { status: 409 }
+    );
   }
 
   const slot = await db.promoSlot.create({

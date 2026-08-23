@@ -6,6 +6,7 @@ import Link from "next/link";
 import { api, useUser } from "@/lib/client";
 import { Cover, EmptyState, Spinner } from "@/components/ui";
 import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/TopNav";
 import { fmtDateTime } from "@/lib/format";
 
 type Conv = {
@@ -40,6 +41,8 @@ export default function ChatsPage() {
 
   if (!user) {
     return (
+      <>
+      <TopNav />
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center px-6 pb-24">
         <EmptyState icon="💬" title="Suhbatlarni ko'rish uchun kiring"
           subtitle="Klinikalar bilan yozishuv va qo'llab-quvvatlash shu yerda" />
@@ -48,12 +51,15 @@ export default function ChatsPage() {
         </Link>
         <BottomNav />
       </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-2xl pb-24">
-      <header className="rounded-b-3xl bg-white px-4 pb-4 pt-6 shadow-sm">
+    <>
+    <TopNav />
+    <div className="mx-auto min-h-dvh w-full max-w-4xl pb-24 md:px-6 md:pb-12 md:pt-5">
+      <header className="rounded-b-3xl bg-white px-4 pb-4 pt-6 shadow-sm md:rounded-2xl md:px-6 md:pt-5 md:shadow-none md:ring-1 md:ring-zinc-100">
         <h1 className="text-2xl font-extrabold">Xabarlar</h1>
 
         <button onClick={openSupport} disabled={busy}
@@ -67,7 +73,7 @@ export default function ChatsPage() {
         </button>
       </header>
 
-      <div className="px-4 pt-4">
+      <div className="px-4 pt-4 md:px-0">
         {!items ? (
           <div className="space-y-3">{[1, 2, 3].map((i) => <div key={i} className="sg-skeleton h-16" />)}</div>
         ) : items.length === 0 ? (
@@ -102,5 +108,6 @@ export default function ChatsPage() {
 
       <BottomNav />
     </div>
+    </>
   );
 }

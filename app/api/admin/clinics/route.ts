@@ -22,6 +22,7 @@ export async function GET() {
       rating: c.rating, reviewCount: c.reviewCount, photoUrl: c.photoUrl,
       username: c.users[0]?.username ?? null,
       appointments: c._count.appointments, reviews: c._count.reviews, doctors: c._count.doctors,
+      deactivated: !!c.deactivatedAt,
       infoStale: c.infoConfirmedAt.getTime() < Date.now() - 60 * 864e5,
     })),
   });
@@ -133,6 +134,73 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ ok: true, credentials: { username: clinicUser.username, password } });
   }
 
+  // To'liq tahrirlash — admin klinikaning istalgan maydonini o'zgartira oladi
+  if (body.action === "edit") {
+    const f = (body.fields ?? {}) as Record<string, unknown>;
+    const edit: Record<string, unknown> = {};
+    const str = (k: string, max: number) => {
+      if (typeof f[k] === "string") edit[k] = (f[k] as string).trim().slice(0, max);
+    };
+    str("name", 120); str("description", 1000); str("address", 200);
+    str("district", 60); str("phone", 30);
+
+    if (typeof f.lat === "number" && f.lat >= -90 && f.lat <= 90) edit.lat = f.lat;
+    if (typeof f.lng === "number" && f.lng >= -180 && f.lng <= 180) edit.lng = f.lng;
+    for (const b of ["is247", "emergency", "childFriendly", "showDoctors"]) {
+      if (typeof f[b] === "boolean") edit[b] = f[b];
+    }
+    if (typeof f.coverHue === "number") edit.coverHue = Math.max(0, Math.min(360, Math.round(f.coverHue)));
+    if (typeof f.workingHours === "string") {
+      try { JSON.parse(f.workingHours as string); edit.workingHours = f.workingHours; }
+      catch { return NextResponse.json({ error: "Ish vaqti formati noto'g'ri (JSON)" }, { status: 400 }); }
+    }
+    if (typeof f.slug === "string") {
+      const slug = (f.slug as string).trim().toLowerCase().replace(/[^a-z0-9-]/g, "-").replace(/-+/g, "-").slice(0, 60);
+      if (!slug) return NextResponse.json({ error: "Slug bo'sh bo'lmasin" }, { status: 400 });
+      const taken = await db.clinic.findFirst({ where: { slug, id: { not: id } } });
+      if (taken) return NextResponse.json({ error: `"${slug}" band — boshqa slug tanlang` }, { status: 400 });
+      edit.slug = slug;
+    }
+
+    if (Object.keys(edit).length === 0) {
+      return NextResponse.json({ error: "O'zgartirish uchun maydon yo'q" }, { status: 400 });
+    }
+    await db.clinic.update({ where: { id }, data: edit });
+    audit({ ...actor, action: "CLINIC_UPDATE", entity: "Clinic", entityId: id, meta: { fields: Object.keys(edit) } });
+    return NextResponse.json({ ok: true });
+  }
+
+  // Shartnomani bekor qilish — klinika ro'yxatdan chiqadi, tarix saqlanadi.
+  // O'chirishdan farqi: bemorlarning yozuvlari va sharhlari yo'qolmaydi.
+  if (body.action === "deactivate" || body.action === "activate") {
+    const off = body.action === "deactivate";
+    await db.clinic.update({ where: { id }, data: { deactivatedAt: off ? new Date() : null } });
+    await db.user.updateMany({
+      where: { clinicId: id, role: "CLINIC" },
+      data: { blockedAt: off ? new Date() : null },
+    });
+    if (off) {
+      // Kutilayotgan so'rovlar osilib qolmasin
+      await db.appointment.updateMany({
+        where: { clinicId: id, status: { in: ["PENDING", "CONFIRMED", "ALT_OFFERED"] } },
+        data: { status: "CANCELLED" },
+      });
+      await db.promoSlot.deleteMany({ where: { clinicId: id } });
+    }
+    audit({ ...actor, action: "CLINIC_UPDATE", entity: "Clinic", entityId: id, meta: { deactivated: off } });
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === "block" || body.action === "unblock") {
+    const blocked = body.action === "block";
+    await db.user.updateMany({
+      where: { clinicId: id, role: "CLINIC" },
+      data: { blockedAt: blocked ? new Date() : null },
+    });
+    audit({ ...actor, action: "CLINIC_UPDATE", entity: "Clinic", entityId: id, meta: { blocked } });
+    return NextResponse.json({ ok: true });
+  }
+
   const data: Record<string, unknown> = {};
   if (body.action === "verify") {
     data.verifiedAt = new Date();
@@ -142,11 +210,65 @@ export async function PATCH(req: NextRequest) {
     data.verifiedAt = null;
     audit({ ...actor, action: "CLINIC_VERIFY", entity: "Clinic", entityId: id, meta: { value: false } });
   }
-  if (body.action === "setTier" && ["FREE", "STANDARD", "PREMIUM"].includes(body.tier)) {
+  if (body.action === "setTier" && ["FREE", "PRO"].includes(body.tier)) {
     data.tier = body.tier;
     data.tierEndsAt = body.tier === "FREE" ? null : new Date(Date.now() + 30 * 864e5);
     audit({ ...actor, action: "CLINIC_TIER", entity: "Clinic", entityId: id, meta: { tier: body.tier } });
   }
   await db.clinic.update({ where: { id }, data });
+  return NextResponse.json({ ok: true });
+}
+
+/**
+ * Klinikani butunlay o'chirish.
+ * Bog'liq yozuvlar ko'p — tartib bilan, bitta tranzaksiyada o'chiramiz.
+ * Xavfsizlik: tasdiq sifatida klinika nomi aynan yuborilishi shart.
+ */
+export async function DELETE(req: NextRequest) {
+  const admin = await requireRole("ADMIN");
+  if (!admin) return unauthorized();
+
+  const id = req.nextUrl.searchParams.get("id") ?? "";
+  const confirmName = req.nextUrl.searchParams.get("confirm") ?? "";
+
+  const clinic = await db.clinic.findUnique({
+    where: { id },
+    include: { _count: { select: { appointments: true, reviews: true, doctors: true } } },
+  });
+  if (!clinic) return NextResponse.json({ error: "Klinika topilmadi" }, { status: 404 });
+
+  if (confirmName.trim() !== clinic.name) {
+    return NextResponse.json(
+      { error: `Tasdiqlash uchun klinika nomini aynan yozing: "${clinic.name}"` },
+      { status: 400 }
+    );
+  }
+
+  await db.$transaction(async (tx) => {
+    await tx.message.deleteMany({ where: { conversation: { clinicId: id } } });
+    await tx.conversation.deleteMany({ where: { clinicId: id } });
+    await tx.review.deleteMany({ where: { clinicId: id } });
+    await tx.appointment.deleteMany({ where: { clinicId: id } });
+    await tx.clinicService.deleteMany({ where: { clinicId: id } });
+    await tx.serviceCatalog.deleteMany({ where: { clinicId: id } });
+    await tx.clinicPhoto.deleteMany({ where: { clinicId: id } });
+    await tx.promoSlot.deleteMany({ where: { clinicId: id } });
+    await tx.event.deleteMany({ where: { clinicId: id } });
+    await tx.doctor.deleteMany({ where: { clinicId: id } });
+    await tx.user.deleteMany({ where: { clinicId: id, role: "CLINIC" } });
+    await tx.clinic.delete({ where: { id } });
+  });
+
+  audit({
+    actorId: admin.id, actorRole: "ADMIN", actorName: admin.name ?? "Admin",
+    action: "CLINIC_DELETE", entity: "Clinic", entityId: id,
+    meta: {
+      name: clinic.name,
+      appointments: clinic._count.appointments,
+      reviews: clinic._count.reviews,
+      doctors: clinic._count.doctors,
+    },
+  });
+
   return NextResponse.json({ ok: true });
 }

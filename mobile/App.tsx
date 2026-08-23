@@ -35,13 +35,13 @@ const TAB_ICONS: Record<string, [IconName, IconName]> = {
 function AiTabIcon({ focused }: { focused: boolean }) {
   return (
     <View style={{
-      width: 52, height: 52, borderRadius: 26, marginTop: -18,
+      width: 58, height: 58, borderRadius: 29, marginTop: -22,
       backgroundColor: focused ? C.brandDark : C.brand,
       alignItems: "center", justifyContent: "center",
       borderWidth: 4, borderColor: C.card,
       ...Platform.select({ android: { elevation: 6 }, default: {} }),
     }}>
-      <Ionicons name="sparkles" size={22} color={C.onBrand} />
+      <Ionicons name="sparkles" size={25} color={C.onBrand} />
     </View>
   );
 }
@@ -55,19 +55,23 @@ function Tabs() {
         headerShown: false,
         tabBarActiveTintColor: C.brand,
         tabBarInactiveTintColor: C.faint,
-        tabBarLabelStyle: { fontSize: 10.5, fontWeight: "700", marginTop: 1 },
+        tabBarLabelStyle: { fontSize: 12.5, fontWeight: "700", marginTop: 3, marginBottom: 0 },
+        // Tizim navigatsiyasi uchun joy pastda alohida ajratiladi (paddingBottom),
+        // menyu tugmalari esa qolgan 62px lentaning MARKAZIDA turadi.
         tabBarStyle: {
-          height: 58 + insets.bottom,
-          paddingBottom: Math.max(insets.bottom, 8),
-          paddingTop: 7,
+          height: 74 + insets.bottom,
+          paddingBottom: insets.bottom,
+          paddingTop: 0,
           backgroundColor: C.card,
           borderTopColor: C.line,
           borderTopWidth: 1,
         },
+        tabBarItemStyle: { height: 74, paddingVertical: 9, justifyContent: "center" },
+        tabBarIconStyle: { flex: 0 },
         tabBarIcon: ({ focused, color }) => {
           if (route.name === "AI maslahat") return <AiTabIcon focused={focused} />;
           const pair = TAB_ICONS[route.name];
-          return <Ionicons name={focused ? pair[0] : pair[1]} size={23} color={color} />;
+          return <Ionicons name={focused ? pair[0] : pair[1]} size={27} color={color} />;
         },
       })}
     >

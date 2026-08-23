@@ -283,8 +283,11 @@ export default function ClinicScreen({ route, navigation }: {
             <Text style={{ fontSize: 13, color: C.mut, textAlign: "center", marginTop: 5 }}>
               Klinika odatda {d.avgResponseMin} daqiqada javob beradi. Holatni Profil bo&apos;limida kuzating.
             </Text>
-            <View style={{ backgroundColor: C.softer, borderRadius: 12, paddingHorizontal: 18, paddingVertical: 9, marginTop: 12 }}>
-              <Text style={{ fontSize: 13 }}>Yozuv kodi: <Text style={{ fontWeight: "900", fontSize: 16, letterSpacing: 1 }}>{success}</Text></Text>
+            <View style={{ backgroundColor: C.softer, borderRadius: 12, paddingHorizontal: 16, paddingVertical: 10, marginTop: 12 }}>
+              <Text style={{ fontSize: 12.5, color: C.mut, textAlign: "center", lineHeight: 18 }}>
+                Klinikaga borganingizda resepshndagi QR kodni skanerlang — tashrifingiz
+                tasdiqlanadi va sharh yozish ochiladi.
+              </Text>
             </View>
           </View>
         ) : loginMode ? (

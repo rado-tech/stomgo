@@ -26,7 +26,7 @@ export async function POST(req: NextRequest) {
       clinicId: user.clinicId,
       name,
       gender: body.gender === "FEMALE" ? "FEMALE" : "MALE",
-      specialty: String(body.specialty ?? "TERAPEVT").slice(0, 30),
+      specialty: (String(body.specialty ?? "").trim() || "TERAPEVT").slice(0, 30),
       experienceYears: Math.max(0, parseInt(String(body.experienceYears), 10) || 0),
       education: String(body.education ?? "").slice(0, 200),
       licenseNo: String(body.licenseNo ?? "").slice(0, 50),

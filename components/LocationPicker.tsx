@@ -28,25 +28,69 @@ export default function LocationPicker({
   }, [onChange]);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    const map = new maplibregl.Map({
-      container: containerRef.current,
-      style: STYLE_URL,
-      center: [lng, lat],
-      zoom: 14,
-      attributionControl: { compact: true },
+    const el = containerRef.current;
+    if (!el) return;
+
+    let disposed = false;
+    let fallbackTimer: ReturnType<typeof setTimeout> | undefined;
+    let styleOk = false;
+
+    /**
+     * Xarita FAQAT konteyner haqiqiy o'lchamga ega bo'lgach yaratiladi.
+     * Aks holda MapLibre 400x300 zaxira o'lchamda qotib qoladi: pin ko'rinadi,
+     * plitkalar esa yuklanmaydi (sozlamalar sahifasida aynan shu bo'lgan edi).
+     */
+    const createMap = () => {
+      if (disposed || mapRef.current) return;
+
+      const map = new maplibregl.Map({
+        container: el,
+        style: STYLE_URL,
+        center: [lng, lat],
+        zoom: 14,
+        attributionControl: { compact: true },
+      });
+      mapRef.current = map;
+      map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
+
+      // "load" ba'zan kelmaydi — "styledata" ishonchliroq
+      const styleLoaded = () => {
+        if (styleOk) return;
+        styleOk = true;
+        clearTimeout(fallbackTimer);
+        map.resize();
+      };
+      map.on("styledata", styleLoaded);
+      map.on("load", () => { styleLoaded(); map.resize(); });
+
+      fallbackTimer = setTimeout(() => {
+        if (!styleOk && !disposed) map.setStyle(FALLBACK_STYLE);
+      }, 10000);
+
+      map.on("moveend", () => {
+        const c = map.getCenter();
+        onChangeRef.current(Math.round(c.lat * 1e6) / 1e6, Math.round(c.lng * 1e6) / 1e6);
+      });
+    };
+
+    // O'lcham paydo bo'lishini kutamiz; keyin har o'zgarishda moslaymiz
+    const ro = new ResizeObserver(() => {
+      if (disposed) return;
+      if (el.clientWidth > 0 && el.clientHeight > 0) {
+        if (!mapRef.current) createMap();
+        else mapRef.current.resize();
+      }
     });
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), "bottom-right");
-    const fallbackTimer = setTimeout(() => {
-      if (!map.isStyleLoaded()) map.setStyle(FALLBACK_STYLE);
-    }, 8000);
-    map.once("load", () => clearTimeout(fallbackTimer));
-    map.on("moveend", () => {
-      const c = map.getCenter();
-      onChangeRef.current(Math.round(c.lat * 1e6) / 1e6, Math.round(c.lng * 1e6) / 1e6);
-    });
-    mapRef.current = map;
-    return () => { map.remove(); mapRef.current = null; };
+    ro.observe(el);
+    if (el.clientWidth > 0 && el.clientHeight > 0) createMap();
+
+    return () => {
+      disposed = true;
+      clearTimeout(fallbackTimer);
+      ro.disconnect();
+      mapRef.current?.remove();
+      mapRef.current = null;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

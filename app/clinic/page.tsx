@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import ClinicBookForm from "@/components/ClinicBookForm";
+
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Badge, Sheet, Spinner, EmptyState, Toast } from "@/components/ui";
@@ -19,7 +22,7 @@ const GROUPS: { key: string; title: string; statuses: string[] }[] = [
 ];
 
 export default function ClinicAppointmentsPage() {
-  const [data, setData] = useState<{ items: Apt[]; checkinCode?: string; clinicName?: string } | null>(null);
+  const [data, setData] = useState<{ items: Apt[]; clinicName?: string; clinicSlug?: string } | null>(null);
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
   const [altFor, setAltFor] = useState<Apt | null>(null);
   const [altDate, setAltDate] = useState("");
@@ -29,7 +32,7 @@ export default function ClinicAppointmentsPage() {
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(() => {
-    api<{ items: Apt[]; checkinCode?: string; clinicName?: string }>("/api/clinic/appointments")
+    api<{ items: Apt[]; clinicName?: string; clinicSlug?: string }>("/api/clinic/appointments")
       .then(setData)
       .catch(() => setData({ items: [] }));
   }, []);
@@ -71,11 +74,18 @@ export default function ClinicAppointmentsPage() {
             {pendingCount > 0 ? `${pendingCount} ta yangi so'rov javob kutmoqda` : "Yangi so'rovlar yo'q"}
           </p>
         </div>
-        <div className="rounded-xl bg-teal-50 px-4 py-2 text-[13px]">
-          Bugungi check-in kodi: <b className="font-mono text-[16px] text-teal-800">{data.checkinCode}</b>
-          <p className="text-[11px] text-teal-600">Resepshn stoliga qo&apos;ying — bemor shu kod bilan kelganini tasdiqlaydi</p>
-        </div>
+        <Link href="/clinic/qr" className="rounded-xl bg-teal-50 px-4 py-2 text-[13px] transition hover:bg-teal-100">
+          <b className="text-teal-800">QR kod →</b>
+          <p className="text-[11px] text-teal-600">Resepshn stoliga qo&apos;ying — bemor skanerlab kelganini tasdiqlaydi</p>
+        </Link>
       </div>
+
+      {/* Xodim bemorni o'zi yozib qo'yishi (suhbatda kelishilgan bo'lsa) */}
+      {data.clinicSlug && (
+        <div className="mb-4">
+          <ClinicBookForm slug={data.clinicSlug} onDone={load} />
+        </div>
+      )}
 
       {data.items.length === 0 ? (
         <EmptyState icon="📭" title="Hozircha yozuvlar yo'q" />

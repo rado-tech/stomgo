@@ -18,6 +18,7 @@ model User {
   username       String?  @unique // CLINIC/ADMIN uchun login
   passwordHash   String? // CLINIC/ADMIN uchun parol (bcrypt)
   photoUrl       String? // bemor rasmi (ixtiyoriy)
+  blockedAt      DateTime? // admin bloklagan bo'lsa — kira olmaydi
   telegramChatId String?  // bemor botga ulangan bo'lsa
   tgLinkCode     String?  @unique
   createdAt      DateTime @default(now())
@@ -80,8 +81,9 @@ model Clinic {
   childFriendly   Boolean   @default(false)
   showDoctors     Boolean   @default(true)
   verifiedAt      DateTime?
+  deactivatedAt   DateTime? // shartnoma bekor qilingan: ro'yxatda ko'rinmaydi, tarix saqlanadi
   infoConfirmedAt DateTime  @default(now())
-  tier            String    @default("FREE") // FREE | STANDARD | PREMIUM
+  tier            String    @default("FREE") // FREE | PRO (pullik obuna: VIP slot olish huquqi)
   tierEndsAt      DateTime?
   rating          Float     @default(0)
   reviewCount     Int       @default(0)
@@ -163,7 +165,7 @@ model Appointment {
   note         String    @default("")
   rejectReason String    @default("")
   code         String
-  source       String    @default("APP") // APP | TRIAGE
+  source       String    @default("APP") // APP | TRIAGE | CLINIC (xodim yozgan)
   reminded24   Boolean   @default(false)
   reminded2    Boolean   @default(false)
   reviewAsked  Boolean   @default(false) // botdagi "baholang" so'rovi yuborilganmi

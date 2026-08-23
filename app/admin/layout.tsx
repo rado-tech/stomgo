@@ -9,6 +9,11 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/admin", label: "Boshqaruv", exact: true },
+  { href: "/admin/klinikalar", label: "Klinikalar" },
+  { href: "/admin/yozuvlar", label: "Yozuvlar" },
+  { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar" },
+  { href: "/admin/shifokorlar", label: "Shifokor hujjatlari" },
+  { href: "/admin/xizmatlar", label: "Xizmatlar katalogi" },
   { href: "/admin/sharhlar", label: "Sharh moderatsiyasi" },
   { href: "/admin/promo", label: "Promo slotlar" },
   { href: "/admin/qollab", label: "Qo'llab-quvvatlash" },

@@ -26,7 +26,7 @@ export type ClinicDetail = {
 export type Appointment = {
   id: string; status: string; requestedAt: string; altAt: string | null; code: string;
   createdAt: string; note: string; rejectReason: string;
-  clinic: { name: string; slug: string; address: string; phone: string; coverHue: number };
+  clinic: { name: string; slug: string; address: string; phone: string; coverHue: number; active?: boolean };
   doctor: { name: string; specialty: string } | null;
   review: { id: string } | null;
 };

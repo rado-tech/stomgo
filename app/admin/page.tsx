@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { api } from "@/lib/client";
 import { Badge, Sheet, Spinner, Toast } from "@/components/ui";
 
@@ -69,7 +69,6 @@ function MiniBars({ data, color, title }: { data: { date: string; value: number 
 const EMPTY_FORM = { name: "", district: "", address: "", phone: "" };
 
 export default function AdminPage() {
-  const router = useRouter();
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [clinics, setClinics] = useState<AdminClinic[] | null>(null);
   const [toast, setToast] = useState<string | null>(null);
@@ -84,12 +83,6 @@ export default function AdminPage() {
   }, []);
   useEffect(load, [load]);
 
-  const act = async (id: string, body: object) => {
-    await api("/api/admin/clinics", { method: "PATCH", json: { id, ...body } });
-    load();
-    setToast("Saqlandi");
-    setTimeout(() => setToast(null), 2000);
-  };
 
   const createClinic = async () => {
     setBusy(true);
@@ -107,25 +100,14 @@ export default function AdminPage() {
     }
   };
 
-  const impersonate = async (c: AdminClinic) => {
-    if (!confirm(`${c.name} paneliga kirasiz. Admin panelga qaytish uchun qaytadan admin sifatida kirishingiz kerak bo'ladi. Davom etilsinmi?`)) return;
-    await api("/api/admin/clinics", { method: "PATCH", json: { id: c.id, action: "impersonate" } });
-    // Sessiya roli o'zgardi — router keshi eski rolni ko'rsatmasligi uchun to'liq qayta yuklash
-    router.push("/clinic");
-    router.refresh();
-  };
 
-  const resetPassword = async (c: AdminClinic) => {
-    if (!confirm(`${c.name} uchun yangi parol yaratilsinmi? Eski parol ishlamay qoladi.`)) return;
-    const res = await api<{ credentials: Credentials }>("/api/admin/clinics", {
-      method: "PATCH", json: { id: c.id, action: "resetPassword" },
-    });
-    setCreds({ clinicName: c.name, c: res.credentials });
-  };
 
   if (!stats || !clinics) return <div className="flex justify-center py-20"><Spinner /></div>;
 
   const t = stats.totals;
+  // Panelni to'ldirib yubormaslik uchun faqat muammoli klinikalar ko'rsatiladi
+  const attention = clinics.filter((c) => !c.photoUrl || c.infoStale || !c.verified).slice(0, 6);
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
@@ -147,111 +129,47 @@ export default function AdminPage() {
         <MiniBars title="Yangi bemorlar (kunlik)" color="#1d4ed8" data={stats.days.map((d) => ({ date: d.date, value: d.patients }))} />
       </div>
 
+      {/* Tez havolalar — batafsil boshqaruv alohida sahifalarda */}
       <div className="mb-2 mt-6 flex items-center justify-between">
-        <h2 className="font-bold">Klinikalar</h2>
+        <h2 className="font-bold">Tez o&apos;tish</h2>
         <button onClick={() => setCreateOpen(true)} className="rounded-xl bg-teal-600 px-4 py-2 text-[13px] font-bold text-white">
           + Yangi klinika
         </button>
       </div>
-      {/* Mobil: kartochkalar */}
-      <div className="space-y-2.5 md:hidden">
-        {clinics.map((c) => (
-          <div key={c.id} className="rounded-2xl border border-zinc-100 bg-white p-3.5">
-            <div className="flex items-center justify-between gap-2">
-              <p className="font-bold">{c.name}{c.infoStale && " ⚠️"}{!c.photoUrl && " 📷"}</p>
-              {c.verified ? <Badge color="teal">Tekshirilgan</Badge> : <Badge color="zinc">Tekshirilmagan</Badge>}
-            </div>
-            <p className="mt-0.5 text-[12.5px] text-zinc-500">
-              {c.district} · ★ {c.rating.toFixed(1)} ({c.reviewCount}) · {c.appointments} yozuv · login: <span className="font-mono">{c.username ?? "—"}</span>
-            </p>
-            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-              <select
-                value={c.tier}
-                onChange={(e) => act(c.id, { action: "setTier", tier: e.target.value })}
-                className="rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-[12px]"
-              >
-                <option value="FREE">FREE</option>
-                <option value="STANDARD">STANDARD</option>
-                <option value="PREMIUM">PREMIUM</option>
-              </select>
-              <button onClick={() => act(c.id, { action: c.verified ? "unverify" : "verify" })}
-                className="rounded-lg border border-zinc-200 px-2.5 py-1.5 text-[12px] font-semibold">
-                {c.verified ? "Bekor" : "Tasdiqlash"}
-              </button>
-              <button onClick={() => resetPassword(c)}
-                className="rounded-lg border border-amber-300 px-2.5 py-1.5 text-[12px] font-semibold text-amber-700">
-                Parol
-              </button>
-              <button onClick={() => impersonate(c)}
-                className="rounded-lg border border-teal-300 px-2.5 py-1.5 text-[12px] font-semibold text-teal-700">
-                Panel →
-              </button>
-            </div>
-          </div>
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+        {([
+          ["/admin/klinikalar", "Klinikalar", `${clinics.length} ta`],
+          ["/admin/yozuvlar", "Yozuvlar", `${t.bookings30d} (30 kun)`],
+          ["/admin/foydalanuvchilar", "Foydalanuvchilar", `${t.patients} bemor`],
+          ["/admin/sharhlar", "Sharh navbati", `${t.pendingReviews} ta`],
+          ["/admin/shifokorlar", "Shifokor hujjatlari", "tekshirish"],
+        ] as const).map(([href, title, sub]) => (
+          <Link key={href} href={href}
+            className="rounded-2xl border border-zinc-100 bg-white p-3.5 transition hover:border-teal-300 hover:bg-teal-50/40">
+            <p className="text-[13.5px] font-bold">{title}</p>
+            <p className="mt-0.5 text-[12px] text-zinc-500">{sub}</p>
+          </Link>
         ))}
       </div>
 
-      {/* Katta ekran: jadval */}
-      <div className="hidden overflow-x-auto rounded-2xl border border-zinc-100 bg-white md:block">
-        <table className="w-full text-[13px]">
-          <thead>
-            <tr className="border-b border-zinc-100 text-left text-[11px] uppercase text-zinc-400">
-              <th className="p-3">Klinika</th><th className="p-3">Login</th><th className="p-3">Tuman</th><th className="p-3">Reyting</th>
-              <th className="p-3">Yozuvlar</th><th className="p-3">Tarif</th><th className="p-3">Holat</th><th className="p-3">Amallar</th>
-            </tr>
-          </thead>
-          <tbody>
-            {clinics.map((c) => (
-              <tr key={c.id} className="border-b border-zinc-50 last:border-0">
-                <td className="p-3 font-semibold">
-                  {c.name}
-                  {c.infoStale && <span title="Ma'lumot eskirgan"> ⚠️</span>}
-                  {!c.photoUrl && <span title="Rasm yuklanmagan"> 📷</span>}
-                </td>
-                <td className="p-3 font-mono text-[12px] text-zinc-500">{c.username ?? "—"}</td>
-                <td className="p-3 text-zinc-500">{c.district}</td>
-                <td className="p-3">★ {c.rating.toFixed(1)} ({c.reviewCount})</td>
-                <td className="p-3">{c.appointments}</td>
-                <td className="p-3">
-                  <select
-                    value={c.tier}
-                    onChange={(e) => act(c.id, { action: "setTier", tier: e.target.value })}
-                    className="rounded-lg border border-zinc-200 px-2 py-1 text-[12px]"
-                  >
-                    <option value="FREE">FREE</option>
-                    <option value="STANDARD">STANDARD</option>
-                    <option value="PREMIUM">PREMIUM</option>
-                  </select>
-                </td>
-                <td className="p-3">{c.verified ? <Badge color="teal">Tekshirilgan</Badge> : <Badge color="zinc">Tekshirilmagan</Badge>}</td>
-                <td className="p-3">
-                  <div className="flex gap-1.5">
-                    <button
-                      onClick={() => act(c.id, { action: c.verified ? "unverify" : "verify" })}
-                      className="rounded-lg border border-zinc-200 px-2.5 py-1 text-[12px] font-semibold"
-                    >
-                      {c.verified ? "Bekor qilish" : "Tasdiqlash"}
-                    </button>
-                    <button
-                      onClick={() => resetPassword(c)}
-                      className="rounded-lg border border-amber-300 px-2.5 py-1 text-[12px] font-semibold text-amber-700"
-                    >
-                      Parol
-                    </button>
-                    <button
-                      onClick={() => impersonate(c)}
-                      title="Klinika panelini ochish (admin sifatida)"
-                      className="rounded-lg border border-teal-300 px-2.5 py-1 text-[12px] font-semibold text-teal-700"
-                    >
-                      Panel →
-                    </button>
-                  </div>
-                </td>
-              </tr>
+      {/* Diqqat talab qiladiganlar */}
+      {attention.length > 0 && (
+        <>
+          <h2 className="mb-2 mt-6 font-bold">Diqqat talab qiladi</h2>
+          <div className="space-y-1.5">
+            {attention.map((c) => (
+              <Link key={c.id} href="/admin/klinikalar"
+                className="flex items-center gap-2 rounded-xl border border-amber-200 bg-amber-50/60 px-3 py-2 text-[13px] hover:bg-amber-50">
+                <span className="font-semibold">{c.name}</span>
+                <span className="text-[12px] text-amber-800">
+                  {[!c.photoUrl && "rasm yo'q", c.infoStale && "ma'lumot eskirgan", !c.verified && "tekshirilmagan"]
+                    .filter(Boolean).join(" · ")}
+                </span>
+              </Link>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+        </>
+      )}
 
       <h2 className="mb-2 mt-6 font-bold">Oxirgi triaj sessiyalari</h2>
       <div className="space-y-1.5">

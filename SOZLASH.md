@@ -7,7 +7,7 @@ bog'liq bo'lgani uchun men to'ldira olmayman.
 
 | Nima | Holat |
 |---|---|
-| Sayt internetda | ✅ https://closer-dvds-survey-webcast.trycloudflare.com |
+| Sayt internetda | ✅ https://propose-mime-session-removing.trycloudflare.com |
 | Telegram bot | ✅ @finaybot — jonli (token .env da) |
 | PostgreSQL | ✅ Docker'da (stomgo-pg), migratsiyalar qo'llangan |
 | Admin kirish | PAROLLAR-MAXFIY.txt faylida (faqat sizda) |

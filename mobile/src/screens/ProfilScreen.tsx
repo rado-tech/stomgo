@@ -52,7 +52,6 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
 
   // Amallar
   const [checkinFor, setCheckinFor] = useState<Appointment | null>(null);
-  const [checkinCode, setCheckinCode] = useState("");
   const [reviewFor, setReviewFor] = useState<Appointment | null>(null);
   const [rating, setRating] = useState(5);
   const [reviewText, setReviewText] = useState("");
@@ -152,6 +151,22 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
     } catch (e) {
       Alert.alert("Xatolik", (e as Error).message);
     }
+  };
+
+  /** Yozuv ustiga bosilganda klinika sahifasiga o'tish */
+  const openClinic = (a: Appointment) => {
+    if (a.clinic.active === false) {
+      Alert.alert(
+        "Klinika platformada yo'q",
+        `${a.clinic.name} bilan shartnoma bekor qilingan — klinika sahifasi endi mavjud emas.
+
+` +
+        "Yozuvingiz tarixda saqlanib qoladi. Yangi qabul uchun boshqa klinika tanlang.",
+        [{ text: "Tushunarli" }]
+      );
+      return;
+    }
+    navigation.navigate("Clinic", { slug: a.clinic.slug });
   };
 
   /** Vaqtni o'zgartirish oynasi — klinikaning bo'sh vaqtlarini olamiz */
@@ -404,7 +419,7 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
           )}
         </View>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-          <IconPill name="create-outline" onPress={openEdit} size={19} />
+          <IconPill name="pencil" onPress={openEdit} size={18} />
           <IconPill name="menu" onPress={() => setMenuOpen(true)} size={20} />
         </View>
       </View>
@@ -483,10 +498,23 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
           const st = statusUi(a.status);
           return (
             <View key={a.id} style={{ backgroundColor: C.card, borderRadius: 16, padding: 13, marginBottom: 9 }}>
-              <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-                <Text style={{ fontWeight: "800", fontSize: 14.5, flex: 1, color: C.text }}>{a.clinic.name}</Text>
+              {/* Klinika nomi — bosilsa sahifasiga o'tadi; shartnoma bekor bo'lsa xabar chiqadi */}
+              <Pressable
+                onPress={() => openClinic(a)}
+                style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 }}
+              >
+                <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 5 }}>
+                  <Text style={{ fontWeight: "800", fontSize: 14.5, color: C.text }} numberOfLines={1}>
+                    {a.clinic.name}
+                  </Text>
+                  <Ionicons
+                    name={a.clinic.active === false ? "alert-circle-outline" : "chevron-forward"}
+                    size={15}
+                    color={a.clinic.active === false ? C.amber : C.faint}
+                  />
+                </View>
                 {st && <Badge label={st.label} color={st.color} bg={st.bg} />}
-              </View>
+              </Pressable>
               <Text style={{ fontSize: 13, color: C.mut, marginTop: 3 }}>
                 🕐 {fmtDateTime(a.requestedAt)}{a.doctor ? ` · ${a.doctor.name}` : ""}
               </Text>
@@ -525,12 +553,12 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
                   </>
                 )}
                 {a.status === "CONFIRMED" && (
-                  <Pressable onPress={() => { setCheckinFor(a); setCheckinCode(""); }}
+                  <Pressable onPress={() => { setCheckinFor(a); }}
                     style={{
                       backgroundColor: C.brand, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6,
                       borderWidth: 1.5, borderColor: C.outlinePrimary,
                     }}>
-                    <Text style={{ fontSize: 12.5, fontWeight: "800", color: "#fff" }}>Keldim ✓ (kod: {a.code})</Text>
+                    <Text style={{ fontSize: 12.5, fontWeight: "800", color: "#fff" }}>Keldim ✓</Text>
                   </Pressable>
                 )}
                 {["ARRIVED", "DONE"].includes(a.status) && !a.review && (
@@ -694,16 +722,24 @@ export default function ProfilScreen({ navigation }: { navigation: { navigate: (
       </Sheet>
 
       <Sheet open={!!checkinFor} onClose={() => setCheckinFor(null)} title="Kelganingizni tasdiqlang">
-        <Text style={{ fontSize: 13, color: C.mut }}>
-          Klinikadagi QR kodni skanerlang yoki resepshndagi 4 xonali kodni kiriting.
-        </Text>
-        <TextInput
-          value={checkinCode} onChangeText={(t) => setCheckinCode(t.replace(/\D/g, "").slice(0, 4))}
-          keyboardType="number-pad" placeholder="••••" placeholderTextColor={C.faint}
-          style={{ borderWidth: 1.2, borderColor: C.line, borderRadius: 15, paddingVertical: 12, fontSize: 24, textAlign: "center", letterSpacing: 10, marginTop: 12, marginBottom: 12, color: C.text }}
-        />
-        <Btn title="Tasdiqlash" disabled={checkinCode.length !== 4}
-          onPress={() => checkinFor && act(checkinFor.id, { action: "checkin", clinicCode: checkinCode }, () => setCheckinFor(null))} />
+        <View style={{ alignItems: "center" }}>
+          <View style={{
+            width: 56, height: 56, borderRadius: 16, backgroundColor: C.brandLight,
+            alignItems: "center", justifyContent: "center",
+          }}>
+            <Ionicons name="qr-code-outline" size={28} color={C.brand} />
+          </View>
+          <Text style={{ fontSize: 13.5, color: C.mut, textAlign: "center", marginTop: 12, lineHeight: 20 }}>
+            Resepshn stolidagi <Text style={{ fontWeight: "800", color: C.ink2 }}>QR kodni</Text> telefon
+            kamerangiz bilan skanerlang — tashrifingiz tasdiqlanadi va sharh yozish ochiladi.
+          </Text>
+          <Text style={{ fontSize: 12.5, color: C.faint, textAlign: "center", marginTop: 8 }}>
+            Skanerlay olmasangiz, resepshnga ayting — ular panelda belgilaydi.
+          </Text>
+          <View style={{ width: "100%", marginTop: 16 }}>
+            <Btn title="Yopish" variant="outline" onPress={() => setCheckinFor(null)} />
+          </View>
+        </View>
       </Sheet>
 
       {/* Sharh */}

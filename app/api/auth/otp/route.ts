@@ -25,6 +25,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Juda ko'p urinish. Birozdan keyin qayta urining." }, { status: 429 });
   }
 
+  // Bloklangan hisobga kod umuman yuborilmasin
+  const existing = await db.user.findUnique({ where: { phone }, select: { blockedAt: true } });
+  if (existing?.blockedAt) {
+    return NextResponse.json(
+      { error: "Hisobingiz bloklangan. Qo'llab-quvvatlash bilan bog'laning." },
+      { status: 403 }
+    );
+  }
+
   const code = String(100000 + Math.floor(Math.random() * 900000)).slice(0, 6);
 
   if (tgConfigured()) {

@@ -38,4 +38,18 @@ yarn-error.*
 
 # generated native folders
 /ios
-/android
+
+# android/ SAQLANADI — unda qo'lda kiritilgan sozlamalar bor:
+# Firebase (push) ulanishi, ruxsatlar, R8 qoidalari, ABI bo'linishi.
+# `expo prebuild` ularni qayta yozib yuboradi, shuning uchun repoda turadi.
+# Faqat yig'ilma natijalar va maxfiy fayllar chiqarib tashlanadi:
+/android/.gradle/
+/android/build/
+/android/app/build/
+/android/app/.cxx/
+/android/local.properties
+/android/.idea/
+/android/app/google-services.json
+/android/app/*.keystore
+/android/app/*.jks
+/android/*.hprof

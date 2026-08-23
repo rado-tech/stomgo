@@ -10,13 +10,14 @@ import TelegramLink from "@/components/TelegramLink";
 import UploadButton from "@/components/UploadButton";
 import ThemeToggle from "@/components/ThemeToggle";
 import BottomNav from "@/components/BottomNav";
+import TopNav from "@/components/TopNav";
 import PushSetup from "@/components/PushSetup";
 import { APPOINTMENT_STATUS, fmtDateTime } from "@/lib/format";
 
 type Apt = {
   id: string; status: string; requestedAt: string; altAt: string | null; code: string;
   createdAt: string; note: string; rejectReason: string;
-  clinic: { name: string; slug: string; address: string; phone: string; coverHue: number };
+  clinic: { name: string; slug: string; address: string; phone: string; coverHue: number; active?: boolean };
   doctor: { name: string; specialty: string } | null;
   review: { id: string } | null;
   rescheduleCount?: number;
@@ -30,7 +31,6 @@ export default function ProfilePage() {
   const [qrFor, setQrFor] = useState<Apt | null>(null);
   const [qr, setQr] = useState<{ code: string; url: string } | null>(null);
   const [checkinFor, setCheckinFor] = useState<Apt | null>(null);
-  const [checkinCode, setCheckinCode] = useState("");
   const [reviewFor, setReviewFor] = useState<Apt | null>(null);
   const [moveFor, setMoveFor] = useState<Apt | null>(null);
   const [moveSlots, setMoveSlots] = useState<{ date: string; label: string; slots: string[] }[] | null>(null);
@@ -199,6 +199,8 @@ export default function ProfilePage() {
 
   if (!user) {
     return (
+      <>
+      <TopNav />
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center px-6 pb-20">
         <EmptyState icon="👤" title="Profilga kirmagansiz" subtitle="Yozuvlaringizni ko'rish uchun kiring" />
         <Link href="/kirish?next=/profil" className="w-full rounded-2xl bg-teal-600 py-3.5 text-center font-bold text-white">
@@ -206,11 +208,17 @@ export default function ProfilePage() {
         </Link>
         <BottomNav />
       </div>
+      </>
     );
   }
 
   return (
-    <div className="mx-auto min-h-dvh w-full max-w-md px-4 pb-24 pt-6">
+    <>
+    <TopNav />
+    <div className="mx-auto w-full max-w-6xl px-4 pb-24 pt-6 md:px-6 md:pb-12">
+      {/* Kompyuterda: chapda profil kartochkasi, o'ngda yozuvlar */}
+      <div className="grid items-start gap-6 lg:grid-cols-[350px_minmax(0,1fr)]">
+      <aside className="lg:sticky lg:top-20 lg:rounded-2xl lg:border lg:border-zinc-100 lg:bg-white lg:p-5">
       <div className="flex items-center justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           {user.photoUrl ? (
@@ -230,7 +238,7 @@ export default function ProfilePage() {
           </div>
         </div>
         <div className="flex shrink-0 flex-col items-end gap-1.5">
-          <ThemeToggle />
+          <span className="md:hidden"><ThemeToggle /></span>
           <button onClick={openEdit} className="rounded-xl border border-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-teal-700">
             Tahrirlash
           </button>
@@ -253,8 +261,10 @@ export default function ProfilePage() {
       <div className="mt-3">
         <PushSetup />
       </div>
+      </aside>
 
-      <h2 className="mb-2 mt-6 font-bold">Yozuvlarim</h2>
+      <section>
+      <h2 className="mb-2 font-bold lg:mt-1 lg:text-lg">Yozuvlarim</h2>
       {!items ? (
         <div className="space-y-3">{[1, 2].map((i) => <div key={i} className="sg-skeleton h-28" />)}</div>
       ) : items.length === 0 ? (
@@ -316,7 +326,7 @@ export default function ProfilePage() {
                         className="rounded-lg border border-teal-600 px-3 py-1.5 text-[12.5px] font-semibold text-teal-700">
                         QR / kod
                       </button>
-                      <button onClick={() => { setCheckinFor(a); setCheckinCode(""); }}
+                      <button onClick={() => { setCheckinFor(a); }}
                         className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12.5px] font-bold text-white">
                         Keldim ✓
                       </button>
@@ -336,6 +346,9 @@ export default function ProfilePage() {
         </div>
       )}
 
+      </section>
+      </div>
+
       {/* QR kod */}
       <Sheet open={!!qrFor} onClose={() => setQrFor(null)} title="Yozuv kodi">
         <div className="text-center">
@@ -346,25 +359,24 @@ export default function ProfilePage() {
         </div>
       </Sheet>
 
-      {/* Check-in */}
+      {/* Check-in — faqat QR orqali */}
       <Sheet open={!!checkinFor} onClose={() => setCheckinFor(null)} title="Kelganingizni tasdiqlang">
-        <p className="text-[13.5px] text-zinc-500">
-          Resepshn stolidagi 4 xonali kodni kiriting — tashrifingiz tasdiqlanadi va sharh yozish ochiladi.
-        </p>
-        <input
-          value={checkinCode}
-          onChange={(e) => setCheckinCode(e.target.value.replace(/\D/g, "").slice(0, 4))}
-          placeholder="••••"
-          inputMode="numeric"
-          className="mt-3 w-full rounded-2xl border border-zinc-200 px-4 py-3 text-center font-mono text-2xl tracking-[0.4em] outline-none focus:border-teal-500"
-        />
-        <button
-          disabled={busy || checkinCode.length !== 4}
-          onClick={() => checkinFor && action(checkinFor.id, { action: "checkin", clinicCode: checkinCode }, () => { setCheckinFor(null); showToast("Tashrif tasdiqlandi!"); })}
-          className="mt-3 w-full rounded-2xl bg-teal-600 py-3 font-bold text-white disabled:opacity-40"
-        >
-          Tasdiqlash
-        </button>
+        <div className="text-center">
+          <span className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-teal-50 text-3xl">📷</span>
+          <p className="mt-3 text-[13.5px] leading-relaxed text-zinc-500">
+            Resepshn stolidagi <b className="text-zinc-700">QR kodni</b> telefoningiz kamerasi bilan
+            skanerlang — tashrifingiz tasdiqlanadi va sharh yozish ochiladi.
+          </p>
+          <p className="mt-2 text-[12.5px] text-zinc-400">
+            Skanerlay olmasangiz, resepshnga ayting — ular panelda belgilaydi.
+          </p>
+          <button
+            onClick={() => setCheckinFor(null)}
+            className="mt-4 w-full rounded-2xl border border-zinc-200 py-3 font-semibold text-zinc-600"
+          >
+            Yopish
+          </button>
+        </div>
       </Sheet>
 
       {/* Sharh */}
@@ -524,5 +536,6 @@ export default function ProfilePage() {
       {toast && <Toast message={toast.msg} error={toast.error} />}
       <BottomNav />
     </div>
+    </>
   );
 }

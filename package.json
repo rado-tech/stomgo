@@ -9,7 +9,9 @@
     "lint": "eslint",
     "bot": "tsx scripts/bot.ts",
     "db:push": "prisma db push",
-    "db:seed": "tsx prisma/seed.ts"
+    "db:seed": "tsx prisma/seed.ts",
+    "backup": "tsx --env-file=.env scripts/backup.ts",
+    "backup:daemon": "tsx --env-file=.env scripts/backup.ts --daemon"
   },
   "dependencies": {
     "@prisma/client": "^6.19.3",

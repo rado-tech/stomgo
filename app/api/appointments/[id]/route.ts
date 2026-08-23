@@ -91,18 +91,9 @@ Panelda tasdiqlang.`);
     return NextResponse.json({ ok: true });
   }
 
-  if (action === "checkin") {
-    // Resepshn stolidagi kod orqali bemorning o'zi kelganini tasdiqlaydi
-    if (apt.status !== "CONFIRMED") {
-      return NextResponse.json({ error: "Faqat tasdiqlangan yozuvda check-in qilinadi" }, { status: 400 });
-    }
-    if (String(body.clinicCode ?? "") !== apt.clinic.checkinCode) {
-      return NextResponse.json({ error: "Kod noto'g'ri. Resepshndagi kodni kiriting." }, { status: 400 });
-    }
-    await db.appointment.update({ where: { id }, data: { status: "ARRIVED", arrivedAt: new Date() } });
-    audit({ actorId: user.id, actorRole: "PATIENT", actorName: user.name ?? user.phone, action: "APT_CHECKIN", entity: "Appointment", entityId: id });
-    return NextResponse.json({ ok: true });
-  }
+  // Eslatma: kelganini tasdiqlash faqat klinikadagi QR kod orqali (/checkin/[token])
+  // yoki klinika panelidan bo'ladi. 4 xonali kod olib tashlandi — u statik bo'lgani
+  // uchun uydan turib ham "keldim" deb belgilash mumkin edi.
 
   return NextResponse.json({ error: "Noma'lum amal" }, { status: 400 });
 }

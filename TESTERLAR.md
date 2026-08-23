@@ -4,8 +4,9 @@
 
 | Nima | Qayerda |
 |---|---|
-| Sayt (istalgan qurilma) | **https://closer-dvds-survey-webcast.trycloudflare.com** |
-| Android ilova | `StomGo.apk` faylini o'rnatish (Telegram orqali yuboriladi) |
+| Sayt (istalgan qurilma) | **https://propose-mime-session-removing.trycloudflare.com** |
+| Android ilova | **`StomGo.apk`** (38 MB) — zamonaviy telefonlar uchun |
+| Eski telefonlar | `StomGo-eski-telefonlar.apk` (30 MB) — asosiysi o'rnatilmasa shuni sinang |
 | Telegram bot | **@finaybot** |
 
 > Diqqat: server hozircha ishlab chiquvchi kompyuterida — manzil vaqti-vaqti bilan

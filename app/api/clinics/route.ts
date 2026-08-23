@@ -31,6 +31,8 @@ export async function GET(req: NextRequest) {
   const minRating = parseFloat(sp.get("minRating") ?? "") || 0;
 
   const clinics = await db.clinic.findMany({
+    // Shartnomasi bekor qilinganlar ro'yxatda, xaritada va qidiruvda ko'rinmaydi
+    where: { deactivatedAt: null },
     include: {
       services: { include: { service: true } },
       doctors: { where: { isPublic: true } },
@@ -89,12 +91,13 @@ export async function GET(req: NextRequest) {
     );
   else withScore.sort((a, b) => b._score - a._score);
 
-  // Promo (homiylik) slotlari — faqat filtrlarga mos kelganlar, ko'pi bilan 2 ta.
-  // Shoshilinch rejimda promo ko'rsatilmaydi — u yerda faqat masofa hal qiladi.
+  // VIP (pullik joylashuv) — faqat filtrlarga mos kelganlar. Soni cheklanmagan:
+  // qancha faol slot bo'lsa, shuncha ko'rsatiladi (admin belgilaydi).
+  // Shoshilinch rejimda VIP ko'rsatilmaydi — u yerda faqat masofa hal qiladi.
   let promos: ClinicListItem[] = [];
   let list = withScore.map(({ _score, _responseRate, ...rest }) => { void _score; void _responseRate; return rest; });
   if (!urgent) {
-    promos = list.filter((i) => i.isPromo).slice(0, 2);
+    promos = list.filter((i) => i.isPromo);
     const promoIds = new Set(promos.map((p) => p.id));
     list = list.filter((i) => !promoIds.has(i.id));
   }

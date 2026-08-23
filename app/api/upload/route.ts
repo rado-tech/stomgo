@@ -16,19 +16,54 @@ export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return unauthorized();
 
-  const form = await req.formData().catch(() => null);
-  if (!form) return NextResponse.json({ error: "Fayl yuborilmadi" }, { status: 400 });
+  // Ikki usul qo'llab-quvvatlanadi:
+  //  - multipart/form-data — sayt (brauzer <input type=file>)
+  //  - JSON + base64      — mobil ilova (RN'da multipart ishonchsiz)
+  let buf: Buffer;
+  let target = "";
+  let doctorId = "";
+  let clinicIdParam = "";
+  let conversationIdParam = "";
 
-  const file = form.get("file");
-  const target = String(form.get("target") ?? "");
-  const doctorId = String(form.get("doctorId") ?? "");
-  const clinicIdParam = String(form.get("clinicId") ?? "");
+  const contentType = req.headers.get("content-type") ?? "";
 
-  if (!(file instanceof File)) return NextResponse.json({ error: "Fayl topilmadi" }, { status: 400 });
-  if (file.size > MAX_SIZE) return NextResponse.json({ error: "Rasm 8 MB dan katta" }, { status: 400 });
-  if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Faqat rasm fayllari" }, { status: 400 });
+  if (contentType.includes("application/json")) {
+    const body = await req.json().catch(() => null);
+    if (!body) return NextResponse.json({ error: "So'rov formati noto'g'ri" }, { status: 400 });
 
-  const buf = Buffer.from(await file.arrayBuffer());
+    target = String(body.target ?? "");
+    doctorId = String(body.doctorId ?? "");
+    clinicIdParam = String(body.clinicId ?? "");
+    conversationIdParam = String(body.conversationId ?? "");
+
+    const b64 = String(body.dataBase64 ?? "").replace(/^data:image\/[a-z+]+;base64,/, "");
+    if (!b64) return NextResponse.json({ error: "Rasm yuborilmadi" }, { status: 400 });
+    if (b64.length > Math.ceil(MAX_SIZE * 1.4)) {
+      return NextResponse.json({ error: "Rasm 8 MB dan katta" }, { status: 400 });
+    }
+    try {
+      buf = Buffer.from(b64, "base64");
+    } catch {
+      return NextResponse.json({ error: "Rasm ma'lumoti buzilgan" }, { status: 400 });
+    }
+    if (buf.byteLength === 0) return NextResponse.json({ error: "Rasm bo'sh" }, { status: 400 });
+    if (buf.byteLength > MAX_SIZE) return NextResponse.json({ error: "Rasm 8 MB dan katta" }, { status: 400 });
+  } else {
+    const form = await req.formData().catch(() => null);
+    if (!form) return NextResponse.json({ error: "Fayl yuborilmadi" }, { status: 400 });
+
+    const file = form.get("file");
+    target = String(form.get("target") ?? "");
+    doctorId = String(form.get("doctorId") ?? "");
+    clinicIdParam = String(form.get("clinicId") ?? "");
+    conversationIdParam = String(form.get("conversationId") ?? "");
+
+    if (!(file instanceof File)) return NextResponse.json({ error: "Fayl topilmadi" }, { status: 400 });
+    if (file.size > MAX_SIZE) return NextResponse.json({ error: "Rasm 8 MB dan katta" }, { status: 400 });
+    if (!file.type.startsWith("image/")) return NextResponse.json({ error: "Faqat rasm fayllari" }, { status: 400 });
+
+    buf = Buffer.from(await file.arrayBuffer());
+  }
   const actor = { actorId: user.id, actorRole: user.role, actorName: user.name ?? user.phone };
 
   // Xavfsizlik: fayl HAQIQIY rasm ekanini bayt darajasida tekshiramiz (MIME'ga ishonmaymiz).
@@ -59,7 +94,7 @@ export async function POST(req: NextRequest) {
 
     // Suhbat rasmi (tish surati) — har qanday rol o'zi a'zo bo'lgan suhbatga
     if (target === "chat") {
-      const conversationId = String(form.get("conversationId") ?? "");
+      const conversationId = conversationIdParam;
       const conv = await db.conversation.findUnique({ where: { id: conversationId } });
       if (!conv) return NextResponse.json({ error: "Suhbat topilmadi" }, { status: 404 });
 

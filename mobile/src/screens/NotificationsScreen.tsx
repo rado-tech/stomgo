@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, RefreshControl } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api, getToken } from "../api";
 import { C, useTheme } from "../theme";
@@ -47,12 +48,24 @@ export default function NotificationsScreen({ navigation }: {
           <Text style={{ fontSize: 17, fontWeight: "800", color: C.text }}>←</Text>
         </Pressable>
         <Text style={{ fontSize: 18, fontWeight: "900", color: C.text, flex: 1 }}>Bildirishnomalar</Text>
-        {(data?.unread ?? 0) > 0 && (
-          <Pressable onPress={markAllRead}>
-            <Text style={{ fontSize: 12.5, fontWeight: "700", color: C.brand }}>Hammasini o&apos;qildi</Text>
-          </Pressable>
-        )}
       </View>
+
+      {/* "Hammasini o'qildi" — sarlavhaga yopishmasin, kichik ikonka tugma */}
+      {(data?.unread ?? 0) > 0 && (
+        <View style={{ flexDirection: "row", justifyContent: "flex-end", paddingHorizontal: 14, paddingTop: 10, paddingBottom: 2 }}>
+          <Pressable
+            onPress={markAllRead}
+            hitSlop={8}
+            accessibilityLabel="Hammasini o'qilgan deb belgilash"
+            style={{
+              width: 36, height: 36, borderRadius: 18,
+              backgroundColor: C.pill, alignItems: "center", justifyContent: "center",
+            }}
+          >
+            <Ionicons name="checkmark-done" size={19} color={C.brand} />
+          </Pressable>
+        </View>
+      )}
 
       {!data ? (
         <ActivityIndicator color={C.brand} size="large" style={{ marginTop: 50 }} />

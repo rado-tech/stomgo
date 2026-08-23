@@ -11,12 +11,23 @@ export async function GET() {
     where: { userId: user.id },
     orderBy: { createdAt: "desc" },
     include: {
-      clinic: { select: { name: true, slug: true, address: true, phone: true, coverHue: true } },
+      clinic: { select: { name: true, slug: true, address: true, phone: true, coverHue: true, deactivatedAt: true } },
       doctor: { select: { name: true, specialty: true } },
       review: { select: { id: true } },
     },
   });
-  return NextResponse.json({ items });
+
+  // clinicActive: klinika hali platformada bormi (shartnoma bekor qilinmaganmi)
+  return NextResponse.json({
+    items: items.map(({ clinic, ...rest }) => ({
+      ...rest,
+      clinic: {
+        name: clinic.name, slug: clinic.slug, address: clinic.address,
+        phone: clinic.phone, coverHue: clinic.coverHue,
+        active: clinic.deactivatedAt === null,
+      },
+    })),
+  });
 }
 
 export async function POST(req: NextRequest) {

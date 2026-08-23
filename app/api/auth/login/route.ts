@@ -21,6 +21,9 @@ export async function POST(req: NextRequest) {
   }
 
   const user = await db.user.findUnique({ where: { username } });
+  if (user?.blockedAt) {
+    return NextResponse.json({ error: "Hisobingiz bloklangan. Qo'llab-quvvatlash bilan bog'laning." }, { status: 403 });
+  }
   if (!user?.passwordHash || !(await bcrypt.compare(password, user.passwordHash))) {
     audit({ action: "LOGIN_FAIL", actorRole: "SYSTEM", meta: { username, ip } });
     return NextResponse.json({ error: "Login yoki parol noto'g'ri" }, { status: 401 });
