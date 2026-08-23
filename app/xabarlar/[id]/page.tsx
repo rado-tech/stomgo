@@ -1,7 +1,7 @@
 "use client";
 
 import { use, useCallback, useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import BackButton from "@/components/BackButton";
 import { api } from "@/lib/client";
 import { Spinner } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
@@ -12,7 +12,6 @@ type Msg = { id: string; senderRole: string; senderName: string; body: string; i
 /** Suhbat oynasi — bemor tomoni */
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const router = useRouter();
   const [messages, setMessages] = useState<Msg[] | null>(null);
   const [title, setTitle] = useState("Suhbat");
   const [myRole, setMyRole] = useState("PATIENT");
@@ -44,7 +43,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
   return (
     <div className="mx-auto flex h-dvh w-full max-w-2xl flex-col">
       <header className="flex items-center gap-3 border-b border-zinc-100 bg-white px-4 py-3">
-        <button onClick={() => router.push("/xabarlar")} className="rounded-full p-2 text-lg font-bold hover:bg-zinc-100" aria-label="Orqaga">←</button>
+        <BackButton href="/xabarlar" />
         <h1 className="flex-1 truncate text-[17px] font-extrabold">{title}</h1>
       </header>
 

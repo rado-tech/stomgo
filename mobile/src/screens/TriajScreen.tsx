@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { Ionicons } from "@expo/vector-icons";
 import { View, Text, ScrollView, Pressable, TextInput, ActivityIndicator, Linking } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { api } from "../api";
@@ -251,7 +252,10 @@ export default function TriajScreen({ navigation }: { navigation: { navigate: (s
           )}
           {step > 0 && (
             <Pressable onPress={() => setStep((s) => Math.max(0, s - 1))} style={{ marginTop: 12 }}>
-              <Text style={{ fontSize: 13, fontWeight: "600", color: C.mut }}>← Orqaga</Text>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}>
+                <Ionicons name="arrow-back" size={16} color={C.mut} />
+                <Text style={{ fontSize: 13, fontWeight: "600", color: C.mut }}>Orqaga</Text>
+              </View>
             </Pressable>
           )}
         </View>

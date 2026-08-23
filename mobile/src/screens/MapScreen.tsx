@@ -6,7 +6,7 @@ import * as Location from "expo-location";
 import { api, getBaseUrl, absUrl } from "../api";
 import { C, useTheme } from "../theme";
 import { fmtKm } from "../format";
-import { Stars, Badge, Cover } from "../components/ui";
+import { Stars, Badge, Cover, BackButton } from "../components/ui";
 import MapsSheet, { openRoute } from "../components/MapsSheet";
 import type { ClinicListItem } from "../types";
 
@@ -143,10 +143,9 @@ export default function MapScreen({ route, navigation }: {
       </Map>
 
       {/* Orqaga */}
-      <Pressable onPress={() => navigation.goBack()}
-        style={{ position: "absolute", top: insets.top + 10, left: 14, backgroundColor: C.card, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9, elevation: 4 }}>
-        <Text style={{ fontSize: 15, fontWeight: "800", color: C.text }}>←</Text>
-      </Pressable>
+      <View style={{ position: "absolute", top: insets.top + 10, left: 14, elevation: 4 }}>
+        <BackButton onPress={() => navigation.goBack()} />
+      </View>
 
       {/* Yaqinimda */}
       <Pressable onPress={locateMe} disabled={locating}

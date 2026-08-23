@@ -1,6 +1,7 @@
 "use client";
 
 import { type ReactNode } from "react";
+import BackButton from "@/components/BackButton";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { api, useUser } from "@/lib/client";
@@ -73,7 +74,7 @@ export default function ClinicLayout({ children }: { children: ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col">
         {/* Mobil nav */}
         <div className="scrollbar-none flex items-center gap-1 overflow-x-auto border-b border-zinc-200 bg-white px-3 py-2 md:hidden">
-          <Link href="/" className="shrink-0 rounded-full bg-zinc-100 px-2.5 py-1.5 text-[13px]" aria-label="Saytga qaytish">←</Link>
+          <BackButton href="/" className="shrink-0" />
           {NAV.map((n) => {
             const active = n.exact ? pathname === n.href : pathname.startsWith(n.href);
             return (

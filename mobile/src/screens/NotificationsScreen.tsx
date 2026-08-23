@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
+import { BackButton } from "../components/ui";
 import { View, Text, ScrollView, Pressable, ActivityIndicator, RefreshControl } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -33,6 +34,41 @@ export default function NotificationsScreen({ navigation }: {
     setRefreshing(false);
   };
 
+  /**
+   * Bildirishnoma bosilganda kerakli ekranga o'tamiz.
+   * Server web yo'lini beradi ("/xabarlar", "/profil", "/klinika/<slug>") —
+   * uni ilova ekranlariga o'giramiz. Avval bu umuman ishlamasdi: element
+   * oddiy View edi, bosish hodisasi yo'q edi.
+   */
+  const openNotification = async (n: NotificationItem) => {
+    if (!n.readAt) {
+      void api("/api/notifications", { method: "PATCH", json: { id: n.id } }).catch(() => {});
+      setData((d) =>
+        d
+          ? {
+              items: d.items.map((i) => (i.id === n.id ? { ...i, readAt: new Date().toISOString() } : i)),
+              unread: Math.max(0, d.unread - 1),
+            }
+          : d
+      );
+    }
+
+    const link = n.link || "/";
+    if (link.startsWith("/klinika/")) {
+      navigation.navigate("Clinic", { slug: link.replace("/klinika/", "") });
+    } else if (link.startsWith("/xabarlar/")) {
+      navigation.navigate("Chat", { id: link.replace("/xabarlar/", ""), title: "Suhbat" });
+    } else if (link.startsWith("/xabarlar")) {
+      navigation.navigate("Tabs", { screen: "Xabarlar" });
+    } else if (link.startsWith("/profil")) {
+      navigation.navigate("Tabs", { screen: "Profil" });
+    } else if (link.startsWith("/triaj")) {
+      navigation.navigate("Tabs", { screen: "AI maslahat" });
+    } else {
+      navigation.navigate("Tabs", { screen: "Asosiy" });
+    }
+  };
+
   const markAllRead = async () => {
     await api("/api/notifications", { method: "PATCH", json: { all: true } }).catch(() => {});
     setData((d) => d ? { items: d.items.map((i) => ({ ...i, readAt: i.readAt ?? new Date().toISOString() })), unread: 0 } : d);
@@ -44,9 +80,7 @@ export default function NotificationsScreen({ navigation }: {
         flexDirection: "row", alignItems: "center", gap: 10,
         paddingTop: insets.top + 8, paddingBottom: 12, paddingHorizontal: 14, backgroundColor: C.card,
       }}>
-        <Pressable onPress={() => navigation.goBack()} hitSlop={10}>
-          <Text style={{ fontSize: 17, fontWeight: "800", color: C.text }}>←</Text>
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} size={40} />
         <Text style={{ fontSize: 18, fontWeight: "900", color: C.text, flex: 1 }}>Bildirishnomalar</Text>
       </View>
 
@@ -94,14 +128,23 @@ export default function NotificationsScreen({ navigation }: {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} colors={[C.brand]} tintColor={C.brand} />}
         >
           {data.items.map((n) => (
-            <View key={n.id} style={{
-              backgroundColor: C.card, borderRadius: 15, padding: 13, marginBottom: 9,
-              borderLeftWidth: n.readAt ? 0 : 4, borderLeftColor: C.brand,
-            }}>
-              <Text style={{ fontSize: 14, fontWeight: n.readAt ? "600" : "800", color: C.text }}>{n.title}</Text>
-              {!!n.body && <Text style={{ fontSize: 13, color: C.ink3, marginTop: 3, lineHeight: 18 }}>{n.body}</Text>}
-              <Text style={{ fontSize: 11.5, color: C.faint, marginTop: 5 }}>{fmtDateTime(n.createdAt)}</Text>
-            </View>
+            <Pressable
+              key={n.id}
+              onPress={() => void openNotification(n)}
+              style={({ pressed }) => ({
+                backgroundColor: pressed ? C.pill : C.card,
+                borderRadius: 15, padding: 13, marginBottom: 9,
+                borderLeftWidth: n.readAt ? 0 : 4, borderLeftColor: C.brand,
+                flexDirection: "row", alignItems: "center", gap: 10,
+              })}
+            >
+              <View style={{ flex: 1 }}>
+                <Text style={{ fontSize: 14, fontWeight: n.readAt ? "600" : "800", color: C.text }}>{n.title}</Text>
+                {!!n.body && <Text style={{ fontSize: 13, color: C.ink3, marginTop: 3, lineHeight: 18 }}>{n.body}</Text>}
+                <Text style={{ fontSize: 11.5, color: C.faint, marginTop: 5 }}>{fmtDateTime(n.createdAt)}</Text>
+              </View>
+              <Ionicons name="chevron-forward" size={16} color={C.faint} />
+            </Pressable>
           ))}
         </ScrollView>
       )}

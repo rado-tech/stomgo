@@ -5,7 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { api, getBaseUrl, absUrl, getToken, setToken } from "../api";
 import { C, SPECIALTY_LABELS, useTheme } from "../theme";
 import { fmtKm, fmtPrice } from "../format";
-import { Stars, Badge, Btn, Sheet, Chip } from "../components/ui";
+import { Stars, Badge, Btn, Sheet, Chip, BackButton } from "../components/ui";
 import MapsSheet, { openRoute } from "../components/MapsSheet";
 import type { ClinicDetail, Me } from "../types";
 
@@ -133,10 +133,9 @@ export default function ClinicScreen({ route, navigation }: {
             <Text style={{ fontSize: 56, fontWeight: "900", color: "#fff" }}>{d.name[0]}</Text>
           </View>
         )}
-        <Pressable onPress={() => navigation.goBack()}
-          style={{ position: "absolute", top: insets.top + 8, left: 14, backgroundColor: C.card, borderRadius: 999, paddingHorizontal: 13, paddingVertical: 9 }}>
-          <Text style={{ fontSize: 15, fontWeight: "800" }}>←</Text>
-        </Pressable>
+        <View style={{ position: "absolute", top: insets.top + 8, left: 14 }}>
+          <BackButton onPress={() => navigation.goBack()} />
+        </View>
 
         <View style={{ paddingHorizontal: 16 }}>
           <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginTop: 14 }}>

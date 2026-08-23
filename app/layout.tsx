@@ -1,7 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SwRegister from "@/components/SwRegister";
-import InstallPrompt from "@/components/InstallPrompt";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -44,7 +43,6 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
         />
         <SwRegister />
         {children}
-        <InstallPrompt />
       </body>
     </html>
   );

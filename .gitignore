@@ -81,3 +81,7 @@ StomGo.apk
 
 # Zaxira nusxalar
 /backups/
+
+# MapLibre worker fayllari — postinstall/prebuild avtomatik ko' chiradi
+# (versiya nomuvofiqligi bo'lmasligi uchun repoda saqlanmaydi)
+/public/maplibre/

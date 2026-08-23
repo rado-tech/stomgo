@@ -1,4 +1,4 @@
-import Link from "next/link";
+import BackButton from "@/components/BackButton";
 
 export const metadata = { title: "Ommaviy oferta" };
 
@@ -9,7 +9,7 @@ export const metadata = { title: "Ommaviy oferta" };
 export default function OfferPage() {
   return (
     <div className="mx-auto max-w-2xl px-5 py-10 text-[14.5px] leading-relaxed text-zinc-700">
-      <Link href="/" className="text-[13px] font-semibold text-teal-700">← Bosh sahifa</Link>
+      <BackButton href="/" label="Bosh sahifa" />
       <h1 className="mt-3 text-2xl font-extrabold text-zinc-900">Foydalanish shartlari (ommaviy oferta)</h1>
 
       <h2 className="mt-6 font-bold text-zinc-900">1. Xizmat tavsifi</h2>

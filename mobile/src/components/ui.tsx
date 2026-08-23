@@ -135,6 +135,24 @@ export function Btn({ title, onPress, disabled, variant = "primary", icon }: {
 }
 
 /** Ekran sarlavhasi (orqaga + nom + o'ngdagi element) */
+/** Orqaga tugmasi — butun ilovada bir xil: to'q doira ichida strelka */
+export function BackButton({ onPress, size = 42 }: { onPress: () => void; size?: number }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      hitSlop={10}
+      accessibilityLabel="Orqaga"
+      style={({ pressed }) => ({
+        width: size, height: size, borderRadius: size / 2,
+        backgroundColor: pressed ? C.line : C.pill,
+        alignItems: "center", justifyContent: "center",
+      })}
+    >
+      <Ionicons name="arrow-back" size={Math.round(size * 0.5)} color={C.text} />
+    </Pressable>
+  );
+}
+
 export function ScreenHeader({ title, onBack, right }: { title: string; onBack?: () => void; right?: React.ReactNode }) {
   const insets = useSafeAreaInsets();
   return (
@@ -143,7 +161,7 @@ export function ScreenHeader({ title, onBack, right }: { title: string; onBack?:
       paddingTop: insets.top + 8, paddingBottom: 12, paddingHorizontal: 14,
       backgroundColor: C.card,
     }}>
-      {onBack && <IconPill name="chevron-back" onPress={onBack} size={19} />}
+      {onBack && <BackButton onPress={onBack} size={40} />}
       <Text style={{ fontSize: 19, fontWeight: "800", color: C.text, flex: 1 }} numberOfLines={1}>{title}</Text>
       {right}
     </View>

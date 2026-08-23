@@ -1,8 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import BackButton from "@/components/BackButton";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { api, useUser } from "@/lib/client";
 import { Spinner, EmptyState } from "@/components/ui";
 import BottomNav from "@/components/BottomNav";
@@ -13,7 +13,6 @@ type Notif = { id: string; title: string; body: string; link: string; readAt: st
 
 export default function NotificationsPage() {
   const { user, loading } = useUser();
-  const router = useRouter();
   const [data, setData] = useState<{ items: Notif[]; unread: number } | null>(null);
 
   const load = useCallback(() => {
@@ -53,8 +52,7 @@ export default function NotificationsPage() {
     <TopNav />
     <div className="mx-auto min-h-dvh w-full max-w-3xl px-4 pb-24 pt-5 md:pb-12">
       <div className="flex items-center gap-3">
-        <button onClick={() => (window.history.length > 2 ? router.back() : router.push("/"))}
-          className="rounded-full p-2 text-lg font-bold hover:bg-zinc-100" aria-label="Orqaga">←</button>
+        <BackButton />
         <h1 className="flex-1 text-xl font-extrabold">Bildirishnomalar</h1>
         {(data?.unread ?? 0) > 0 && (
           <button onClick={markAllRead} className="text-[13px] font-semibold text-teal-700">

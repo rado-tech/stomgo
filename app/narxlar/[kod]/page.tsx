@@ -1,8 +1,8 @@
 "use client";
 
 import { use, useCallback, useEffect, useMemo, useState } from "react";
+import BackButton from "@/components/BackButton";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { api, useGeo } from "@/lib/client";
 import { Badge, Spinner, EmptyState, Cover, Stars } from "@/components/ui";
 import { fmtPrice, fmtKm } from "@/lib/format";
@@ -35,7 +35,6 @@ const SORTS = [
 /** Bitta xizmat bo'yicha barcha klinikalar narxi yonma-yon */
 export default function PriceComparePage({ params }: { params: Promise<{ kod: string }> }) {
   const { kod } = use(params);
-  const router = useRouter();
   const geo = useGeo();
   const [data, setData] = useState<Data | null>(null);
   const [err, setErr] = useState("");
@@ -72,9 +71,7 @@ export default function PriceComparePage({ params }: { params: Promise<{ kod: st
       <TopNav />
       <div className="mx-auto min-h-dvh w-full max-w-5xl pb-24 md:px-6 md:pb-12 md:pt-5">
         <header className="rounded-b-3xl bg-white px-4 pb-4 pt-6 shadow-sm md:rounded-2xl md:px-6 md:pt-5 md:shadow-none md:ring-1 md:ring-zinc-100">
-          <button onClick={() => router.push("/narxlar")} className="text-[13px] font-semibold text-teal-700">
-            ← Barcha xizmatlar
-          </button>
+          <BackButton href="/narxlar" label="Barcha xizmatlar" />
 
           {err ? (
             <p className="mt-3 text-[14px] text-red-600">{err}</p>

@@ -16,6 +16,23 @@ const FALLBACK_STYLES = [
   "https://basemaps.cartocdn.com/gl/voyager-gl-style/style.json",
 ];
 
+/**
+ * MapLibre v6 worker manzilini `import.meta.url` ga nisbatan hisoblaydi va
+ * bundler chunki yonidan `maplibre-gl-worker.mjs` ni qidiradi. Next.js uni
+ * u yerga chiqarmaydi — 404 kelib, javob HTML bo'ladi:
+ *   "Failed to load module script: non-JavaScript MIME type text/html"
+ * Worker ishlamasa VEKTOR qatlamlar chizilmaydi (marker va boshqaruvlar esa
+ * ko'rinaveradi — shuning uchun xarita "yarim ishlagandek" tuyuladi).
+ *
+ * Fayllar scripts/copy-maplibre-worker.mjs orqali public/maplibre/ ga
+ * ko'chiriladi (prebuild bosqichida avtomatik).
+ */
+try {
+  maplibregl.setWorkerUrl("/maplibre/maplibre-gl-worker.mjs");
+} catch {
+  // Eski versiyada bunday API bo'lmasligi mumkin — xarita baribir ochiladi
+}
+
 /** Xarita chizish uchun WebGL kerak — eski qurilma/drayverlarda o'chiq bo'lishi mumkin */
 export function webglSupported(): boolean {
   try {

@@ -5,7 +5,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { api, getBaseUrl, setBaseUrl, setToken, getToken } from "../api";
 import { C, useTheme, type ThemeMode } from "../theme";
-import { Sheet, Btn, type IconName } from "../components/ui";
+import { Sheet, Btn, BackButton, type IconName } from "../components/ui";
 import { unregisterPush } from "../push";
 
 /**
@@ -107,16 +107,7 @@ export default function SettingsScreen({ navigation }: {
         flexDirection: "row", alignItems: "center", gap: 14,
         paddingTop: insets.top + 10, paddingBottom: 16, paddingHorizontal: 16,
       }}>
-        <Pressable
-          onPress={() => navigation.goBack()}
-          hitSlop={10}
-          style={{
-            width: 42, height: 42, borderRadius: 21, backgroundColor: C.card,
-            alignItems: "center", justifyContent: "center",
-          }}
-        >
-          <Ionicons name="arrow-back" size={21} color={C.text} />
-        </Pressable>
+        <BackButton onPress={() => navigation.goBack()} />
         <Text style={{ fontSize: 24, fontWeight: "900", color: C.text }}>Sozlamalar</Text>
       </View>
 
