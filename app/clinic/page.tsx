@@ -7,7 +7,7 @@ import TimeInput from "@/components/TimeInput";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Badge, Sheet, Spinner, EmptyState, Toast } from "@/components/ui";
-import { APPOINTMENT_STATUS, fmtDateTime } from "@/lib/format";
+import { APPOINTMENT_STATUS, fmtDate, fmtDateTime } from "@/lib/format";
 
 type Apt = {
   id: string; patientName: string; patientPhone: string; doctorName: string | null;
@@ -66,6 +66,17 @@ export default function ClinicAppointmentsPage() {
 
   const pendingCount = data.items.filter((a) => a.status === "PENDING").length;
 
+  // Bugungi ko'rsatkichlar — allaqachon yuklangan ro'yxatdan hisoblanadi
+  const todayKey = fmtDate(new Date());
+  const today = data.items.filter((a) => fmtDate(a.requestedAt) === todayKey);
+  const kpis: { label: string; value: number; tone?: "alert" | "good" }[] = [
+    { label: "Bugungi qabullar", value: today.length },
+    { label: "Javob kutmoqda", value: pendingCount, tone: pendingCount > 0 ? "alert" : undefined },
+    { label: "Tasdiqlangan", value: today.filter((a) => a.status === "CONFIRMED").length, tone: "good" },
+    { label: "Kelgan", value: today.filter((a) => a.status === "ARRIVED" || a.status === "DONE").length, tone: "good" },
+    { label: "Kelmagan", value: today.filter((a) => a.status === "NO_SHOW").length, tone: "alert" },
+  ];
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
@@ -79,6 +90,22 @@ export default function ClinicAppointmentsPage() {
           <b className="text-teal-800">QR kod →</b>
           <p className="text-[11px] text-teal-600">Resepshn stoliga qo&apos;ying — bemor skanerlab kelganini tasdiqlaydi</p>
         </Link>
+      </div>
+
+      {/* Bugungi holat — bir qarashda */}
+      <div className="mb-4 grid grid-cols-2 gap-2.5 sm:grid-cols-5">
+        {kpis.map((k) => (
+          <div key={k.label} className="rounded-2xl border border-zinc-100 bg-white p-3">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400">{k.label}</p>
+            <p className={`mt-0.5 text-2xl font-extrabold ${
+              k.value === 0 ? "text-zinc-300"
+                : k.tone === "alert" ? "text-amber-600"
+                : k.tone === "good" ? "text-emerald-600" : ""
+            }`}>
+              {k.value}
+            </p>
+          </div>
+        ))}
       </div>
 
       {/* Xodim bemorni o'zi yozib qo'yishi (suhbatda kelishilgan bo'lsa) */}

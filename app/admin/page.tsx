@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/client";
 import { Badge, Sheet, Spinner, Toast } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
+import { URGENCY_LABELS, type Urgency } from "@/lib/triage/rules";
 
 type AdminStats = {
   totals: { clinics: number; patients: number; bookings30d: number; arrived30d: number; noShow30d: number; pendingReviews: number; triages: number };
@@ -19,7 +20,7 @@ type AdminClinic = {
 
 type Credentials = { username: string; password: string };
 
-const URGENCY_COLORS: Record<string, string> = { EMERGENCY: "red", TODAY: "orange", SOON: "amber", ROUTINE: "emerald" };
+
 
 /** Bitta seriyali kichik ustunlar grafigi */
 function MiniBars({ data, color, title }: { data: { date: string; value: number }[]; color: string; title: string }) {
@@ -67,6 +68,20 @@ function MiniBars({ data, color, title }: { data: { date: string; value: number 
   );
 }
 
+/** Yuqoridagi kartochkalar. `alert` — noldan katta bo'lsa e'tibor talab qiladi. */
+const KPIS: {
+  label: string; hint: string; href?: string; alert?: boolean;
+  pick: (t: AdminStats["totals"]) => number;
+}[] = [
+  { label: "Klinikalar", hint: "platformada", href: "/admin/klinikalar", pick: (t) => t.clinics },
+  { label: "Bemorlar", hint: "ro'yxatdan o'tgan", href: "/admin/foydalanuvchilar", pick: (t) => t.patients },
+  { label: "Yozuvlar", hint: "so'nggi 30 kun", href: "/admin/yozuvlar", pick: (t) => t.bookings30d },
+  { label: "Kelganlar", hint: "so'nggi 30 kun", href: "/admin/yozuvlar", pick: (t) => t.arrived30d },
+  { label: "Kelmaganlar", hint: "so'nggi 30 kun", alert: true, href: "/admin/yozuvlar", pick: (t) => t.noShow30d },
+  { label: "Sharh navbati", hint: "tasdiq kutmoqda", alert: true, href: "/admin/sharhlar", pick: (t) => t.pendingReviews },
+  { label: "Triaj", hint: "AI yordamchi sessiyalari", pick: (t) => t.triages },
+];
+
 const EMPTY_FORM = { name: "", district: "", address: "", phone: "" };
 
 export default function AdminPage() {
@@ -111,17 +126,35 @@ export default function AdminPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-7">
-        {([
-          ["Klinikalar", t.clinics], ["Bemorlar", t.patients], ["Yozuvlar (30k)", t.bookings30d],
-          ["Kelganlar (30k)", t.arrived30d], ["No-show (30k)", t.noShow30d],
-          ["Sharh navbati", t.pendingReviews], ["Triaj sessiyalari", t.triages],
-        ] as const).map(([label, value]) => (
-          <div key={label} className="rounded-2xl border border-zinc-100 bg-white p-3">
-            <p className="text-[11px] font-semibold uppercase text-zinc-400">{label}</p>
-            <p className="mt-0.5 text-xl font-extrabold">{value}</p>
-          </div>
-        ))}
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h1 className="text-xl font-extrabold">Umumiy ko&apos;rinish</h1>
+          <p className="mt-0.5 text-[13px] text-zinc-500">Platformaning hozirgi holati va so&apos;nggi 30 kun</p>
+        </div>
+        <button onClick={() => setCreateOpen(true)} className="rounded-xl bg-teal-600 px-4 py-2.5 text-[13px] font-bold text-white">
+          + Yangi klinika
+        </button>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {KPIS.map((k) => {
+          const value = k.pick(t);
+          const card = (
+            <>
+              <p className="text-[11.5px] font-semibold uppercase tracking-wide text-zinc-400">{k.label}</p>
+              <p className={`mt-1 text-2xl font-extrabold ${k.alert && value > 0 ? "text-amber-600" : ""}`}>{value}</p>
+              <p className="mt-0.5 text-[11.5px] text-zinc-400">{k.hint}</p>
+            </>
+          );
+          return k.href ? (
+            <Link key={k.label} href={k.href}
+              className="rounded-2xl border border-zinc-100 bg-white p-4 transition hover:border-teal-300 hover:bg-teal-50/30">
+              {card}
+            </Link>
+          ) : (
+            <div key={k.label} className="rounded-2xl border border-zinc-100 bg-white p-4">{card}</div>
+          );
+        })}
       </div>
 
       {/* Platforma dinamikasi (14 kun) */}
@@ -131,12 +164,7 @@ export default function AdminPage() {
       </div>
 
       {/* Tez havolalar — batafsil boshqaruv alohida sahifalarda */}
-      <div className="mb-2 mt-6 flex items-center justify-between">
-        <h2 className="font-bold">Tez o&apos;tish</h2>
-        <button onClick={() => setCreateOpen(true)} className="rounded-xl bg-teal-600 px-4 py-2 text-[13px] font-bold text-white">
-          + Yangi klinika
-        </button>
-      </div>
+      <h2 className="mb-2 mt-6 font-bold">Tez o&apos;tish</h2>
       <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
         {([
           ["/admin/klinikalar", "Klinikalar", `${clinics.length} ta`],
@@ -176,7 +204,9 @@ export default function AdminPage() {
       <div className="space-y-1.5">
         {stats.triages.slice(0, 15).map((tr) => (
           <div key={tr.id} className="flex items-center gap-3 rounded-xl border border-zinc-100 bg-white px-3 py-2 text-[13px]">
-            <Badge color={URGENCY_COLORS[tr.urgency]}>{tr.urgency}</Badge>
+            <Badge color={URGENCY_LABELS[tr.urgency as Urgency]?.color ?? "zinc"}>
+              {URGENCY_LABELS[tr.urgency as Urgency]?.label ?? tr.urgency}
+            </Badge>
             <span className="text-zinc-500">{tr.specialty}</span>
             {tr.aiUsed && <Badge color="violet">AI</Badge>}
             <span className="min-w-0 flex-1 truncate text-zinc-400">{tr.freeText || "savollar orqali"}</span>
