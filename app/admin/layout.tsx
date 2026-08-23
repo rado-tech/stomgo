@@ -9,13 +9,14 @@ import ThemeToggle from "@/components/ThemeToggle";
 
 const NAV = [
   { href: "/admin", label: "Boshqaruv", exact: true },
+  { href: "/admin/hisob", label: "Mening hisobim" },
   { href: "/admin/klinikalar", label: "Klinikalar" },
   { href: "/admin/yozuvlar", label: "Yozuvlar" },
   { href: "/admin/foydalanuvchilar", label: "Foydalanuvchilar" },
   { href: "/admin/shifokorlar", label: "Shifokor hujjatlari" },
   { href: "/admin/xizmatlar", label: "Xizmatlar katalogi" },
   { href: "/admin/sharhlar", label: "Sharh moderatsiyasi" },
-  { href: "/admin/promo", label: "Promo slotlar" },
+  { href: "/admin/promo", label: "Top joylashuv" },
   { href: "/admin/qollab", label: "Qo'llab-quvvatlash" },
   { href: "/admin/loglar", label: "Jurnal" },
 ];
@@ -49,7 +50,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             StomGo <span className="rounded bg-red-500 px-1.5 py-0.5 text-[10px]">ADMIN</span>
           </Link>
           <div className="flex items-center gap-3">
-            <Link href="/" className="text-[13px] font-medium text-zinc-300 hover:text-white">← Sayt</Link>
+            <Link href="/" aria-label="Saytga qaytish"
+              className="flex items-center gap-2 text-[13px] font-medium text-zinc-300 transition hover:text-white">
+              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-zinc-700">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M19 12H5" /><path d="M12 19l-7-7 7-7" />
+                </svg>
+              </span>
+              Sayt
+            </Link>
             <ThemeToggle />
             <button onClick={logout} className="text-[13px] font-medium text-zinc-300 hover:text-white">Chiqish</button>
           </div>

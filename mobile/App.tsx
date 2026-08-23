@@ -5,7 +5,7 @@ import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-cont
 import { NavigationContainer, DefaultTheme, type NavigationContainerRef } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import HomeScreen from "./src/screens/HomeScreen";
 import ClinicsScreen from "./src/screens/ClinicsScreen";
 import MapScreen from "./src/screens/MapScreen";
@@ -26,7 +26,7 @@ const Tab = createBottomTabNavigator();
 type IconName = React.ComponentProps<typeof Ionicons>["name"];
 
 const TAB_ICONS: Record<string, [IconName, IconName]> = {
-  Asosiy: ["home-sharp", "home-outline"],
+  Asosiy: ["home", "home-outline"],
   Klinikalar: ["business", "business-outline"],
   Xabarlar: ["chatbubble-ellipses", "chatbubble-ellipses-outline"],
   Profil: ["person-circle", "person-circle-outline"],
@@ -71,6 +71,16 @@ function Tabs() {
         tabBarIconStyle: { flex: 0 },
         tabBarIcon: ({ focused, color }) => {
           if (route.name === "AI maslahat") return <AiTabIcon focused={focused} />;
+          // Uy — to'ldirilgan, eshik kesigi bilan (Ionicons'da bunday variant yo'q)
+          if (route.name === "Asosiy") {
+            return (
+              <MaterialCommunityIcons
+                name={focused ? "home" : "home-outline"}
+                size={29}
+                color={color}
+              />
+            );
+          }
           const pair = TAB_ICONS[route.name];
           return <Ionicons name={focused ? pair[0] : pair[1]} size={27} color={color} />;
         },

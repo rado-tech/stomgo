@@ -67,7 +67,6 @@ export default function HomePage() {
   }, [load, q]);
 
   const all = useMemo(() => [...(data?.promos ?? []), ...(data?.list ?? [])], [data]);
-  const selectedClinic = all.find((c) => c.id === selected);
   const toggle = (k: keyof typeof flags) => setFlags((f) => ({ ...f, [k]: !f[k] }));
 
   const listContent = loading && !data ? (
@@ -185,12 +184,10 @@ export default function HomePage() {
 
         {/* Xarita paneli */}
         <div className={`${view === "list" ? "hidden md:block" : ""} fixed inset-x-0 bottom-14 top-[168px] md:static md:my-3 md:mr-4 md:min-h-0 md:flex-1 md:overflow-hidden md:rounded-2xl md:ring-1 md:ring-zinc-200`}>
-          <MapView clinics={all} center={geo} selected={selected} onSelect={setSelected} />
-          {selectedClinic && (
-            <div className="absolute bottom-3 left-3 right-3 md:bottom-4 md:left-4 md:right-auto md:w-[380px]">
-              <ClinicCard c={selectedClinic} />
-            </div>
-          )}
+          <MapView
+            clinics={all} center={geo} selected={selected} onSelect={setSelected}
+            renderPopup={(c) => <ClinicCard c={c} />}
+          />
         </div>
       </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import * as maplibregl from "maplibre-gl";
 import "maplibre-gl/dist/maplibre-gl.css";
 import type { ClinicListItem } from "@/app/api/clinics/route";
@@ -44,12 +44,14 @@ export function webglSupported(): boolean {
 }
 
 export default function MapView({
-  clinics, center, selected, onSelect,
+  clinics, center, selected, onSelect, renderPopup,
 }: {
   clinics: ClinicListItem[];
   center: { lat: number; lng: number; granted?: boolean };
   selected: string | null;
   onSelect: (id: string | null) => void;
+  /** Tanlangan klinika uchun oyna — marker USTIDA chiqadi */
+  renderPopup?: (c: ClinicListItem) => ReactNode;
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<maplibregl.Map | null>(null);
@@ -61,6 +63,9 @@ export default function MapView({
   const [noWebgl, setNoWebgl] = useState(false);
   const [initError, setInitError] = useState("");
   const [ready, setReady] = useState(false);
+  // Tanlangan marker ekrandagi o'rni — oyna shu nuqta ustida turadi
+  const [popupPos, setPopupPos] = useState<{ x: number; y: number } | null>(null);
+  const [mapWidth, setMapWidth] = useState(0);
 
   useEffect(() => { onSelectRef.current = onSelect; }, [onSelect]);
   useEffect(() => { centerRef.current = center; }, [center]);
@@ -209,6 +214,30 @@ export default function MapView({
     }
   }, [clinics, selected, ready]);
 
+  /** Tanlangan klinikaning ekrandagi koordinatasi (xarita surilganda yangilanadi) */
+  const syncPopup = useCallback(() => {
+    const map = mapRef.current;
+    const c = selected ? clinics.find((x) => x.id === selected) : null;
+    if (!map || !c) { setPopupPos(null); return; }
+    const p = map.project([c.lng, c.lat]);
+    setPopupPos({ x: p.x, y: p.y });
+    setMapWidth(map.getContainer().clientWidth);
+  }, [selected, clinics]);
+
+  useEffect(() => {
+    const map = mapRef.current;
+    if (!map) return;
+    syncPopup();
+    map.on("move", syncPopup);
+    map.on("zoom", syncPopup);
+    map.on("resize", syncPopup);
+    return () => {
+      map.off("move", syncPopup);
+      map.off("zoom", syncPopup);
+      map.off("resize", syncPopup);
+    };
+  }, [syncPopup, ready]);
+
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !selected) return;
@@ -267,6 +296,37 @@ export default function MapView({
   return (
     <div className="relative h-full w-full">
       <div ref={containerRef} className="h-full w-full" onClick={() => onSelect(null)} />
+      {/* Tanlangan klinika oynasi — marker USTIDA */}
+      {selected && popupPos && renderPopup && (() => {
+        const c = clinics.find((x) => x.id === selected);
+        if (!c) return null;
+        const w = mapWidth;
+        // Chekkalarga chiqib ketmasin
+        const half = 170;
+        const x = Math.min(Math.max(popupPos.x, half + 8), Math.max(half + 8, w - half - 8));
+        return (
+          <div
+            className="pointer-events-auto absolute z-20 w-[340px] max-w-[calc(100%-16px)]"
+            style={{ left: x, top: popupPos.y - 14, transform: "translate(-50%, -100%)" }}
+          >
+            <div className="relative">
+              {renderPopup(c)}
+              <button
+                onClick={() => onSelect(null)}
+                aria-label="Yopish"
+                className="absolute -right-2 -top-2 flex h-7 w-7 items-center justify-center rounded-full bg-zinc-800 text-white shadow"
+              >
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <path d="M18 6L6 18M6 6l12 12" />
+                </svg>
+              </button>
+              {/* Pastga qaragan uchburchak — qaysi markerga tegishli ekani ko'rinsin */}
+              <div className="absolute left-1/2 top-full h-0 w-0 -translate-x-1/2 border-x-8 border-t-8 border-x-transparent border-t-white" />
+            </div>
+          </div>
+        );
+      })()}
+
       <button
         onClick={locateMe}
         disabled={locating}

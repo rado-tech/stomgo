@@ -32,6 +32,7 @@ export default function AdminAppointmentsPage() {
   const [status, setStatus] = useState("");
   const [q, setQ] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
+  const [openId, setOpenId] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
 
   const load = useCallback(() => {
@@ -93,76 +94,95 @@ export default function AdminAppointmentsPage() {
         ) : items.length === 0 ? (
           <EmptyState icon="📅" title="Yozuv topilmadi" subtitle="Boshqa filtr bilan urinib ko'ring" />
         ) : (
-          <div className="grid gap-3 xl:grid-cols-2">
+          <div className="space-y-1.5">
             {items.map((a) => {
               const st = APPOINTMENT_STATUS[a.status];
               const canCancel = !["CANCELLED", "DONE", "NO_SHOW"].includes(a.status);
+              const open = openId === a.id;
               return (
-                <div key={a.id} className="rounded-2xl border border-zinc-100 bg-white p-4">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0">
-                      <p className="truncate font-bold">{a.patient}</p>
-                      <p className="font-mono text-[12.5px] text-zinc-500">{a.phone}</p>
+                <div key={a.id} className="rounded-xl border border-zinc-100 bg-white">
+                  {/* Ixcham qator: bemor, klinika, vaqt, holat — bitta satrda */}
+                  <button
+                    onClick={() => setOpenId(open ? null : a.id)}
+                    className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                  >
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="truncate text-[14px] font-bold">{a.patient}</span>
+                        <span className="shrink-0 font-mono text-[11.5px] text-zinc-400">{a.phone}</span>
+                      </div>
+                      <p className="truncate text-[12px] text-zinc-500">
+                        {a.clinic} · {fmtDateTime(a.requestedAt)}
+                        {a.doctor ? ` · ${a.doctor}` : ""}
+                        {a.rescheduleCount > 0 ? ` · ${a.rescheduleCount}× ko'chirilgan` : ""}
+                      </p>
                     </div>
-                    <div className="shrink-0 text-right">
-                      <Badge color={st?.color}>{st?.label ?? a.status}</Badge>
-                      <p className="mt-1 font-mono text-[12px] text-zinc-400">{a.code}</p>
+                    <Badge color={st?.color}>{st?.label ?? a.status}</Badge>
+                    <svg
+                      width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                      className={`shrink-0 text-zinc-400 transition ${open ? "rotate-180" : ""}`}
+                    >
+                      <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </button>
+
+                  {open && (
+                    <div className="border-t border-zinc-100 px-3 py-2.5">
+                      <div className="mb-2 space-y-0.5 text-[12.5px] text-zinc-600">
+                        <p>
+                          <span className="text-zinc-400">Kod:</span>{" "}
+                          <span className="font-mono">{a.code}</span>
+                          <span className="ml-3 text-zinc-400">Yaratilgan:</span> {fmtDateTime(a.createdAt)}
+                        </p>
+                        {a.altAt && <p><span className="text-zinc-400">Taklif:</span> {fmtDateTime(a.altAt)}</p>}
+                        {a.rejectReason && <p className="text-red-600">Sabab: {a.rejectReason}</p>}
+                        {a.note && <p><span className="text-zinc-400">Izoh:</span> {a.note}</p>}
+                      </div>
+
+                      <div className="flex flex-wrap gap-1.5">
+                        <Link href={`/klinika/${a.clinicId}`}
+                          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-[12px] font-semibold">
+                          Klinika
+                        </Link>
+                        {a.status === "PENDING" && (
+                          <>
+                            <button onClick={() => act(a, "confirm")} disabled={busy === a.id}
+                              className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
+                              Tasdiqlash
+                            </button>
+                            <button onClick={() => act(a, "reject")} disabled={busy === a.id}
+                              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
+                              Rad etish
+                            </button>
+                          </>
+                        )}
+                        {a.status === "CONFIRMED" && (
+                          <>
+                            <button onClick={() => act(a, "arrived")} disabled={busy === a.id}
+                              className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
+                              Keldi
+                            </button>
+                            <button onClick={() => act(a, "no_show")} disabled={busy === a.id}
+                              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
+                              Kelmadi
+                            </button>
+                          </>
+                        )}
+                        {a.status === "ARRIVED" && (
+                          <button onClick={() => act(a, "done")} disabled={busy === a.id}
+                            className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
+                            Yakunlash
+                          </button>
+                        )}
+                        {canCancel && (
+                          <button onClick={() => act(a, "cancel")} disabled={busy === a.id}
+                            className="rounded-lg border border-red-300 px-3 py-1.5 text-[12px] font-semibold text-red-600 disabled:opacity-40">
+                            Bekor qilish
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="mt-2.5 space-y-1 text-[13px]">
-                    <p>
-                      <span className="text-zinc-500">Klinika:</span>{" "}
-                      <Link href={`/klinika/${a.clinicId}`} className="font-semibold text-teal-700">{a.clinic}</Link>
-                    </p>
-                    <p><span className="text-zinc-500">Vaqt:</span> {fmtDateTime(a.requestedAt)}</p>
-                    {a.doctor && <p><span className="text-zinc-500">Shifokor:</span> {a.doctor}</p>}
-                    {a.altAt && <p><span className="text-zinc-500">Taklif:</span> {fmtDateTime(a.altAt)}</p>}
-                    {a.rescheduleCount > 0 && (
-                      <p className="text-[12.5px] text-amber-700">{a.rescheduleCount} marta ko&apos;chirilgan</p>
-                    )}
-                    {a.rejectReason && <p className="text-[12.5px] text-red-600">Sabab: {a.rejectReason}</p>}
-                    {a.note && <p className="text-[12.5px] text-zinc-500">Izoh: {a.note}</p>}
-                  </div>
-
-                  <div className="mt-3 flex flex-wrap gap-1.5">
-                    {a.status === "PENDING" && (
-                      <>
-                        <button onClick={() => act(a, "confirm")} disabled={busy === a.id}
-                          className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
-                          Tasdiqlash
-                        </button>
-                        <button onClick={() => act(a, "reject")} disabled={busy === a.id}
-                          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
-                          Rad etish
-                        </button>
-                      </>
-                    )}
-                    {a.status === "CONFIRMED" && (
-                      <>
-                        <button onClick={() => act(a, "arrived")} disabled={busy === a.id}
-                          className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
-                          Keldi
-                        </button>
-                        <button onClick={() => act(a, "no_show")} disabled={busy === a.id}
-                          className="rounded-lg border border-zinc-300 px-3 py-1.5 text-[12px] font-semibold disabled:opacity-40">
-                          Kelmadi
-                        </button>
-                      </>
-                    )}
-                    {a.status === "ARRIVED" && (
-                      <button onClick={() => act(a, "done")} disabled={busy === a.id}
-                        className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
-                        Yakunlash
-                      </button>
-                    )}
-                    {canCancel && (
-                      <button onClick={() => act(a, "cancel")} disabled={busy === a.id}
-                        className="rounded-lg border border-red-300 px-3 py-1.5 text-[12px] font-semibold text-red-600 disabled:opacity-40">
-                        Bekor qilish
-                      </button>
-                    )}
-                  </div>
+                  )}
                 </div>
               );
             })}

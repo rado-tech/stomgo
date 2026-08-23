@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/client";
 import { Badge, Spinner, EmptyState } from "@/components/ui";
 import { ACTION_LABELS } from "@/lib/audit-labels";
+import { fmtDateTime } from "@/lib/format";
 
 type Log = {
   id: string; action: string; actorRole: string; actorName: string;
@@ -17,16 +18,22 @@ const ROLE_COLORS: Record<string, string> = {
 export default function LogsPage() {
   const [data, setData] = useState<{ logs: Log[]; total: number; pages: number } | null>(null);
   const [action, setAction] = useState("");
+  const [q, setQ] = useState("");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
   const [role, setRole] = useState("");
   const [page, setPage] = useState(0);
 
   const load = useCallback(() => {
     const p = new URLSearchParams();
     if (action) p.set("action", action);
+    if (q.trim()) p.set("q", q.trim());
+    if (from) p.set("from", from);
+    if (to) p.set("to", to);
     if (role) p.set("role", role);
     p.set("page", String(page));
     api<{ logs: Log[]; total: number; pages: number }>(`/api/admin/logs?${p}`).then(setData);
-  }, [action, role, page]);
+  }, [action, role, page, q, from, to]);
   useEffect(load, [load]);
 
   if (!data) return <div className="flex justify-center py-20"><Spinner /></div>;
@@ -36,7 +43,12 @@ export default function LogsPage() {
       <h1 className="mb-1 text-xl font-extrabold">Harakatlar jurnali</h1>
       <p className="mb-4 text-[13px] text-zinc-500">Tizimdagi barcha muhim amallar ({data.total} ta yozuv)</p>
 
-      <div className="mb-4 flex flex-wrap gap-2">
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <input
+          value={q} onChange={(e) => { setQ(e.target.value); setPage(0); }}
+          placeholder="Nom, klinika yoki ID bo'yicha qidirish"
+          className="w-64 rounded-xl border border-zinc-200 bg-white px-3.5 py-2 text-[13px] outline-none focus:border-teal-500"
+        />
         <select value={action} onChange={(e) => { setAction(e.target.value); setPage(0); }}
           className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[13px]">
           <option value="">Barcha amallar</option>
@@ -51,6 +63,24 @@ export default function LogsPage() {
           <option value="BOT">Bot</option>
           <option value="SYSTEM">Tizim</option>
         </select>
+        <label className="flex items-center gap-1.5 text-[12.5px] text-zinc-500">
+          dan
+          <input type="date" value={from} onChange={(e) => { setFrom(e.target.value); setPage(0); }}
+            className="rounded-xl border border-zinc-200 bg-white px-2.5 py-2 text-[13px] text-zinc-900" />
+        </label>
+        <label className="flex items-center gap-1.5 text-[12.5px] text-zinc-500">
+          gacha
+          <input type="date" value={to} onChange={(e) => { setTo(e.target.value); setPage(0); }}
+            className="rounded-xl border border-zinc-200 bg-white px-2.5 py-2 text-[13px] text-zinc-900" />
+        </label>
+        {(q || action || role || from || to) && (
+          <button
+            onClick={() => { setQ(""); setAction(""); setRole(""); setFrom(""); setTo(""); setPage(0); }}
+            className="rounded-xl border border-zinc-200 px-3 py-2 text-[12.5px] font-semibold text-zinc-600"
+          >
+            Tozalash
+          </button>
+        )}
       </div>
 
       {data.logs.length === 0 ? (
@@ -70,7 +100,7 @@ export default function LogsPage() {
                 <span className="text-zinc-500">{l.actorName}</span>
                 {metaText && <span className="min-w-0 flex-1 truncate text-zinc-400">{metaText}</span>}
                 <span className="ml-auto shrink-0 text-[11.5px] text-zinc-400">
-                  {new Date(l.createdAt).toLocaleString("uz-UZ", { timeZone: "Asia/Tashkent" })}
+                  {fmtDateTime(l.createdAt)}
                 </span>
               </div>
             );

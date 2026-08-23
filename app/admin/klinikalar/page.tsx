@@ -25,6 +25,9 @@ export default function AdminClinicsPage() {
   const router = useRouter();
   const [items, setItems] = useState<Clinic[] | null>(null);
   const [q, setQ] = useState("");
+  const [tier, setTier] = useState("");
+  const [state, setState] = useState(""); // "" | "active" | "off" | "unverified" | "noPhoto"
+  const [openId, setOpenId] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
   const [toast, setToast] = useState<{ msg: string; error?: boolean } | null>(null);
   const [creds, setCreds] = useState<{ username: string; password: string } | null>(null);
@@ -47,12 +50,21 @@ export default function AdminClinicsPage() {
   };
 
   const shown = useMemo(() => {
-    const s = q.trim().toLowerCase();
-    if (!s) return items ?? [];
-    return (items ?? []).filter((c) =>
-      c.name.toLowerCase().includes(s) || c.district.toLowerCase().includes(s) || (c.username ?? "").includes(s)
-    );
-  }, [items, q]);
+    const t = q.trim().toLowerCase();
+    return (items ?? []).filter((c) => {
+      if (t && !(
+        c.name.toLowerCase().includes(t) ||
+        c.district.toLowerCase().includes(t) ||
+        (c.username ?? "").includes(t)
+      )) return false;
+      if (tier && c.tier !== tier) return false;
+      if (state === "active" && c.deactivated) return false;
+      if (state === "off" && !c.deactivated) return false;
+      if (state === "unverified" && c.verified) return false;
+      if (state === "noPhoto" && c.photoUrl) return false;
+      return true;
+    });
+  }, [items, q, tier, state]);
 
   const act = async (c: Clinic, body: object, okMsg = "Bajarildi") => {
     setBusy(c.id);
@@ -117,12 +129,36 @@ export default function AdminClinicsPage() {
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-xl font-extrabold">Klinikalar</h1>
-        <input
-          value={q} onChange={(e) => setQ(e.target.value)}
-          placeholder="Nom, tuman yoki login"
-          className="w-64 rounded-xl border border-zinc-200 px-3.5 py-2 text-[13.5px] outline-none focus:border-teal-500"
-        />
+        <h1 className="text-xl font-extrabold">
+          Klinikalar <span className="text-[15px] font-semibold text-zinc-400">{shown.length}</span>
+        </h1>
+        <div className="flex flex-wrap items-center gap-2">
+          <input
+            value={q} onChange={(e) => setQ(e.target.value)}
+            placeholder="Nom, tuman yoki login"
+            className="w-56 rounded-xl border border-zinc-200 px-3.5 py-2 text-[13.5px] outline-none focus:border-teal-500"
+          />
+          <select value={tier} onChange={(e) => setTier(e.target.value)}
+            className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[13px]">
+            <option value="">Barcha tarif</option>
+            <option value="FREE">FREE</option>
+            <option value="PRO">PRO</option>
+          </select>
+          <select value={state} onChange={(e) => setState(e.target.value)}
+            className="rounded-xl border border-zinc-200 bg-white px-3 py-2 text-[13px]">
+            <option value="">Barcha holat</option>
+            <option value="active">Faol</option>
+            <option value="off">Shartnoma bekor</option>
+            <option value="unverified">Tekshirilmagan</option>
+            <option value="noPhoto">Rasmsiz</option>
+          </select>
+          {(q || tier || state) && (
+            <button onClick={() => { setQ(""); setTier(""); setState(""); }}
+              className="rounded-xl border border-zinc-200 px-3 py-2 text-[12.5px] font-semibold text-zinc-600">
+              Tozalash
+            </button>
+          )}
+        </div>
       </div>
 
       {creds && (
@@ -143,32 +179,42 @@ export default function AdminClinicsPage() {
         ) : shown.length === 0 ? (
           <EmptyState icon="🏥" title="Klinika topilmadi" subtitle="Boshqa so'rov bilan urinib ko'ring" />
         ) : (
-          <div className="grid gap-3 xl:grid-cols-2">
+          <div className="space-y-1.5">
             {shown.map((c) => (
-              <div key={c.id} className="rounded-2xl border border-zinc-100 bg-white p-4">
-                <div className="flex items-start gap-3">
-                  <Cover hue={200} name={c.name} photoUrl={c.photoUrl} className="h-12 w-12 shrink-0 rounded-xl" />
+              <div key={c.id} className="rounded-xl border border-zinc-100 bg-white">
+                {/* Ixcham qator — bir qarashda hammasi ko'rinadi */}
+                <button
+                  onClick={() => setOpenId(openId === c.id ? null : c.id)}
+                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                >
+                  <Cover hue={200} name={c.name} photoUrl={c.photoUrl} className="h-9 w-9 shrink-0 rounded-lg text-[13px]" />
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <Link href={`/klinika/${c.slug}`} className="truncate font-bold hover:underline">{c.name}</Link>
-                      <div className="flex shrink-0 gap-1">
-                        <Badge color={c.tier === "PRO" ? "amber" : "zinc"}>{c.tier}</Badge>
-                        {c.verified && <Badge color="emerald">Tekshirilgan</Badge>}
-                        {c.deactivated && <Badge color="red">Shartnoma bekor</Badge>}
-                      </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="truncate text-[14px] font-bold">{c.name}</span>
+                      {c.tier === "PRO" && <Badge color="amber">PRO</Badge>}
+                      {c.verified && <Badge color="emerald">✓</Badge>}
+                      {c.deactivated && <Badge color="red">bekor</Badge>}
+                      {!c.photoUrl && <Badge color="zinc">rasmsiz</Badge>}
                     </div>
-                    <p className="text-[12.5px] text-zinc-500">
-                      {c.district} · ★ {c.rating.toFixed(1)} ({c.reviewCount}) · login:{" "}
+                    <p className="truncate text-[12px] text-zinc-500">
+                      {c.district} · ★{c.rating.toFixed(1)} ({c.reviewCount}) · {c.appointments} yozuv ·{" "}
                       <span className="font-mono">{c.username ?? "—"}</span>
                     </p>
-                    <p className="text-[12px] text-zinc-400">
-                      {c.appointments} yozuv · {c.reviews} sharh · {c.doctors} shifokor
-                      {c.infoStale && <span className="ml-1 text-amber-700">· ma&apos;lumot eskirgan</span>}
-                    </p>
                   </div>
-                </div>
+                  <svg
+                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                    className={`shrink-0 text-zinc-400 transition ${openId === c.id ? "rotate-180" : ""}`}
+                  >
+                    <path d="M6 9l6 6 6-6" strokeLinecap="round" strokeLinejoin="round" />
+                  </svg>
+                </button>
 
-                <div className="mt-3 flex flex-wrap gap-1.5">
+                {openId === c.id && (
+                <div className="flex flex-wrap gap-1.5 border-t border-zinc-100 px-3 py-2.5">
+                  <Link href={`/klinika/${c.slug}`}
+                    className="rounded-lg border border-zinc-300 px-3 py-1.5 text-[12px] font-semibold">
+                    Sahifasi
+                  </Link>
                   <button onClick={() => openEdit(c)} disabled={busy === c.id}
                     className="rounded-lg bg-teal-600 px-3 py-1.5 text-[12px] font-bold text-white disabled:opacity-40">
                     Tahrirlash
@@ -212,6 +258,7 @@ Klinika ro'yxatdan chiqadi, lekin bemorlarning yozuv va sharhlari saqlanib qolad
                     Butunlay o&apos;chirish
                   </button>
                 </div>
+                )}
               </div>
             ))}
           </div>
