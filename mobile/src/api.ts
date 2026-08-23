@@ -37,24 +37,77 @@ export async function setToken(token: string | null) {
   else await AsyncStorage.removeItem("sg_token");
 }
 
+/** Tarmoq yetib bormaganda — serverdan kelgan xatodan ajratish uchun */
+export class NetworkError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "NetworkError";
+  }
+}
+
+const TIMEOUT_MS = 20_000;
+const OFFLINE_MSG = "Serverga ulanib bo'lmadi. Internetni tekshirib, qayta urining.";
+const SLOW_MSG = "Server javob bermadi. Aloqa sust — qayta urining.";
+
+// ---------- Ulanish holati ----------
+// Alohida paket (netinfo) qo'shmaymiz: ilova hajmi oshmasin va aslida
+// muhimi "wifi bormi" emas, "O'Z serverimizga yetib boryapmizmi".
+let reachable = true;
+const listeners = new Set<() => void>();
+
+function setReachable(v: boolean) {
+  if (reachable === v) return;
+  reachable = v;
+  listeners.forEach((l) => l());
+}
+
+/** React uchun: useSyncExternalStore(subscribeReachable, isReachable) */
+export function subscribeReachable(onChange: () => void) {
+  listeners.add(onChange);
+  return () => { listeners.delete(onChange); };
+}
+export const isReachable = () => reachable;
+
 export async function api<T = unknown>(
   path: string,
   opts?: { method?: string; json?: unknown }
 ): Promise<T> {
   const base = await getBaseUrl();
   const token = await getToken();
+  const method = opts?.method ?? (opts?.json !== undefined ? "POST" : "GET");
   const init: RequestInit = {
-    method: opts?.method ?? (opts?.json !== undefined ? "POST" : "GET"),
+    method,
     headers: {
       ...(opts?.json !== undefined ? { "Content-Type": "application/json" } : {}),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
     ...(opts?.json !== undefined ? { body: JSON.stringify(opts.json) } : {}),
   };
-  const res = await fetch(`${base}${path}`, init);
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new Error((data as { error?: string }).error ?? `Xatolik (${res.status})`);
-  return data as T;
+
+  // Yozuv so'rovini qayta yubormaymiz — qabul ikki marta yozilib qolmasin
+  const attempts = method === "GET" ? 2 : 1;
+  let timedOut = false;
+
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => { timedOut = true; controller.abort(); }, TIMEOUT_MS);
+    try {
+      const res = await fetch(`${base}${path}`, { ...init, signal: controller.signal });
+      const data = await res.json().catch(() => ({}));
+      setReachable(true);
+      if (!res.ok) throw new Error((data as { error?: string }).error ?? `Xatolik (${res.status})`);
+      return data as T;
+    } catch (e) {
+      // Server javob bergan, lekin xato — tarmoq muammosi emas
+      if (e instanceof Error && e.name !== "AbortError" && e.name !== "TypeError") throw e;
+      if (attempt < attempts - 1) await new Promise((r) => setTimeout(r, 700));
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  setReachable(false);
+  throw new NetworkError(timedOut ? SLOW_MSG : OFFLINE_MSG);
 }
 
 /** Rasm URL'ini absolyut qilish (server nisbiy /api/files/... qaytaradi) */

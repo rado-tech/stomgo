@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import SwRegister from "@/components/SwRegister";
+import OfflineBanner from "@/components/OfflineBanner";
 import { SITE_URL, SITE_NAME } from "@/lib/site";
 import "./globals.css";
 
@@ -68,6 +69,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
             __html: `try{if(localStorage.getItem("sg_theme")==="dark")document.documentElement.dataset.theme="dark"}catch(e){}`,
           }}
         />
+        <OfflineBanner />
         <SwRegister />
         {children}
       </body>

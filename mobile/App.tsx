@@ -3,6 +3,7 @@ import { View, Platform } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaProvider, useSafeAreaInsets } from "react-native-safe-area-context";
 import { NavigationContainer, DefaultTheme, type NavigationContainerRef } from "@react-navigation/native";
+import OfflineBanner from "./src/components/OfflineBanner";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -143,6 +144,8 @@ function Root() {
         <Stack.Screen name="Notifications" component={NotificationsScreen as React.ComponentType} />
         <Stack.Screen name="Settings" component={SettingsScreen as React.ComponentType} />
       </Stack.Navigator>
+      {/* Barcha ekranlar ustida turadi — qaysi sahifada bo'lsa ham ko'rinadi */}
+      <OfflineBanner />
     </NavigationContainer>
   );
 }
