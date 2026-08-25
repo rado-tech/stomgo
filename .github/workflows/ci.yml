@@ -95,6 +95,11 @@ jobs:
       DATABASE_URL: postgresql://stomgo:stomgo_ci@localhost:5432/stomgo?schema=public
       AUTH_SECRET: ci-uchun-uzun-tasodifiy-satr-kamida-32-belgi
       E2E_BASE: http://127.0.0.1:3000
+      # lib/config.ts ishlab chiqarishda bot tokenini talab qiladi (kirish faqat
+      # bot orqali). Sinovda haqiqiy token kerak emas — xabar yuborilmaydi,
+      # testlar faqat avtorizatsiya devorini tekshiradi.
+      TELEGRAM_BOT_TOKEN: ci-soxta-token-xabar-yuborilmaydi
+      TELEGRAM_BOT_USERNAME: ci_test_bot
       # DIQQAT: bu yerda NODE_ENV=production QO'YILMAYDI — u holda `npm ci`
       # dev paketlarni (tsx, prisma CLI) o'rnatmaydi. `next start` o'zi
       # production rejimda ishlaydi.
