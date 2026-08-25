@@ -1,5 +1,5 @@
 import { db } from "./db";
-import { tgSend, fmtDateTimeUz } from "./telegram";
+import { tgSend, fmtDateTimeUz, tgEscape as esc } from "./telegram";
 import { audit } from "./audit";
 import { pushToUser } from "./push";
 
@@ -47,15 +47,15 @@ export async function clinicAction(
     void db.notification.create({
       data: {
         userId: apt.userId, type: "APT_ALT",
-        title: `${apt.clinic.name} boshqa vaqt taklif qildi`,
+        title: `${esc(apt.clinic.name)} boshqa vaqt taklif qildi`,
         body: `Taklif: ${fmtDateTimeUz(extra.altAt)}. Profil bo'limida qabul qilishingiz yoki bekor qilishingiz mumkin.`,
         link: "/profil",
       },
     }).catch(() => {});
     void notifyPatient(apt.user.telegramChatId, apt.clinic.name,
-      `📅 <b>${apt.clinic.name}</b> boshqa vaqt taklif qildi: <b>${fmtDateTimeUz(extra.altAt)}</b>\n\nIlovadagi Profil bo'limida qabul qilishingiz yoki bekor qilishingiz mumkin.`);
+      `📅 <b>${esc(apt.clinic.name)}</b> boshqa vaqt taklif qildi: <b>${fmtDateTimeUz(extra.altAt)}</b>\n\nIlovadagi Profil bo'limida qabul qilishingiz yoki bekor qilishingiz mumkin.`);
     void pushToUser(apt.userId, {
-      title: `${apt.clinic.name} boshqa vaqt taklif qildi`,
+      title: `${esc(apt.clinic.name)} boshqa vaqt taklif qildi`,
       body: `Taklif: ${fmtDateTimeUz(extra.altAt)}`,
       link: "appointments",
     });
@@ -92,33 +92,33 @@ export async function clinicAction(
   // Bemorga xabar: Telegram (ulangan bo'lsa) + bildirishnoma markazi
   if (action === "confirm") {
     void notifyPatient(apt.user.telegramChatId, apt.clinic.name,
-      `✅ <b>${apt.clinic.name}</b> yozuvingizni tasdiqladi!\n\n🕐 ${fmtDateTimeUz(apt.requestedAt)}\n📍 ${apt.clinic.address}\n🔑 Yozuv kodi: <code>${apt.code}</code>`);
+      `✅ <b>${esc(apt.clinic.name)}</b> yozuvingizni tasdiqladi!\n\n🕐 ${fmtDateTimeUz(apt.requestedAt)}\n📍 ${esc(apt.clinic.address)}\n🔑 Yozuv kodi: <code>${apt.code}</code>`);
     void db.notification.create({
       data: {
         userId: apt.userId, type: "APT_CONFIRMED",
-        title: `${apt.clinic.name} yozuvingizni tasdiqladi ✅`,
-        body: `${fmtDateTimeUz(apt.requestedAt)} · ${apt.clinic.address} · kod: ${apt.code}`,
+        title: `${esc(apt.clinic.name)} yozuvingizni tasdiqladi ✅`,
+        body: `${fmtDateTimeUz(apt.requestedAt)} · ${esc(apt.clinic.address)} · kod: ${apt.code}`,
         link: "/profil",
       },
     }).catch(() => {});
     void pushToUser(apt.userId, {
-      title: `${apt.clinic.name} yozuvingizni tasdiqladi ✅`,
+      title: `${esc(apt.clinic.name)} yozuvingizni tasdiqladi ✅`,
       body: `${fmtDateTimeUz(apt.requestedAt)} · kod: ${apt.code}`,
       link: "appointments",
     });
   } else if (action === "reject") {
     void notifyPatient(apt.user.telegramChatId, apt.clinic.name,
-      `❌ <b>${apt.clinic.name}</b> so'rovingizni rad etdi.${extra?.reason ? `\nSabab: ${extra.reason}` : ""}\n\nIlovada boshqa klinika tanlashingiz mumkin.`);
+      `❌ <b>${esc(apt.clinic.name)}</b> so'rovingizni rad etdi.${extra?.reason ? `\nSabab: ${extra.reason}` : ""}\n\nIlovada boshqa klinika tanlashingiz mumkin.`);
     void db.notification.create({
       data: {
         userId: apt.userId, type: "APT_REJECTED",
-        title: `${apt.clinic.name} so'rovni rad etdi`,
+        title: `${esc(apt.clinic.name)} so'rovni rad etdi`,
         body: extra?.reason ? `Sabab: ${extra.reason}` : "Boshqa klinika tanlashingiz mumkin.",
         link: "/",
       },
     }).catch(() => {});
     void pushToUser(apt.userId, {
-      title: `${apt.clinic.name} so'rovni rad etdi`,
+      title: `${esc(apt.clinic.name)} so'rovni rad etdi`,
       body: extra?.reason ? `Sabab: ${extra.reason}` : "Boshqa klinika tanlashingiz mumkin.",
       link: "appointments",
     });
@@ -143,7 +143,7 @@ export async function askReview(appointmentId: string) {
   if (!apt || apt.reviewAsked || apt.review || !apt.user.telegramChatId) return;
   const sent = await tgSend(
     apt.user.telegramChatId,
-    `⭐ <b>${apt.clinic.name}</b> ga tashrifingiz qanday o'tdi?\n\nBaholang — fikringiz boshqa bemorlarga yordam beradi:`,
+    `⭐ <b>${esc(apt.clinic.name)}</b> ga tashrifingiz qanday o'tdi?\n\nBaholang — fikringiz boshqa bemorlarga yordam beradi:`,
     [[1, 2, 3, 4, 5].map((n) => ({ text: "⭐".repeat(n), data: `rev:${apt.id}:${n}` }))]
   );
   if (sent) {
@@ -160,7 +160,7 @@ export async function notifyClinicNewBooking(appointmentId: string) {
   if (!apt?.clinic.telegramChatId) return;
   await tgSend(
     apt.clinic.telegramChatId,
-    `🆕 <b>Yangi yozuv so'rovi</b>\n\n👤 ${apt.user.name ?? "Bemor"} — ${apt.user.phone}\n🕐 ${fmtDateTimeUz(apt.requestedAt)}${apt.doctor ? `\n👨‍⚕️ ${apt.doctor.name}` : ""}${apt.note ? `\n💬 ${apt.note}` : ""}\n\n⏱ 15 daqiqa ichida javob bering`,
+    `🆕 <b>Yangi yozuv so'rovi</b>\n\n👤 ${esc(apt.user.name ?? "Bemor")} — ${esc(apt.user.phone)}\n🕐 ${fmtDateTimeUz(apt.requestedAt)}${apt.doctor ? `\n👨‍⚕️ ${esc(apt.doctor.name)}` : ""}${apt.note ? `\n💬 ${esc(apt.note)}` : ""}\n\n⏱ 15 daqiqa ichida javob bering`,
     [[
       { text: "✅ Tasdiqlash", data: `apt:confirm:${apt.id}` },
       { text: "❌ Rad etish", data: `apt:reject:${apt.id}` },

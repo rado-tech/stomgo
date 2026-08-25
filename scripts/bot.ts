@@ -15,6 +15,7 @@ import { Bot, InlineKeyboard, Keyboard, type Context } from "grammy";
 import { PrismaClient } from "@prisma/client";
 import { fmtDateTimeUz as fmtDT } from "../lib/date-uz";
 import { DISTRICTS } from "../lib/districts";
+import { tgEscape as esc } from "../lib/telegram";
 
 const token = process.env.TELEGRAM_BOT_TOKEN;
 if (!token) {
@@ -76,7 +77,7 @@ bot.command("start", async (ctx) => {
     }
     awaitingContact.set(chatId, tgToken);
     await ctx.reply(
-      `Kirish uchun <b>${otp.phone}</b> raqami sizniki ekanini tasdiqlang.\n\nPastdagi tugmani bosing — Telegram raqamingizni xavfsiz yuboradi:`,
+      `Kirish uchun <b>${esc(otp.phone)}</b> raqami sizniki ekanini tasdiqlang.\n\nPastdagi tugmani bosing — Telegram raqamingizni xavfsiz yuboradi:`,
       {
         parse_mode: "HTML",
         reply_markup: {
@@ -98,14 +99,14 @@ bot.command("start", async (ctx) => {
   const role = await chatRole(chatId);
   if (role?.type === "clinic") {
     await ctx.reply(
-      `✅ Bu chat «${role.clinic.name}» klinikasiga ulangan.\n\nYangi yozuv so'rovlari shu yerga tushadi. Pastdagi menyudan foydalaning:`,
+      `✅ Bu chat «${esc(role.clinic.name)}» klinikasiga ulangan.\n\nYangi yozuv so'rovlari shu yerga tushadi. Pastdagi menyudan foydalaning:`,
       { reply_markup: CLINIC_MENU }
     );
     return;
   }
   if (role?.type === "user") {
     await ctx.reply(
-      `✅ Ulangansiz${role.user.name ? `, ${role.user.name}` : ""}!\n\nYozuv tasdiqlansa va qabuldan oldin eslatmalar shu yerga keladi.`,
+      `✅ Ulangansiz${role.user.name ? `, ${esc(role.user.name)}` : ""}!\n\nYozuv tasdiqlansa va qabuldan oldin eslatmalar shu yerga keladi.`,
       { reply_markup: PATIENT_MENU }
     );
     return;
@@ -137,7 +138,7 @@ bot.command("uzish", async (ctx) => {
       data: { actorRole: "BOT", actorName: role.clinic.name, action: "TG_UNLINK", entity: "Clinic", entityId: role.clinic.id },
     }).catch(() => {});
     await ctx.reply(
-      `🔌 «${role.clinic.name}» uzildi. Yangi so'rovlar bu yerga tushmaydi.\n\n` +
+      `🔌 «${esc(role.clinic.name)}» uzildi. Yangi so'rovlar bu yerga tushmaydi.\n\n` +
         "⚠️ Diqqat: parolni tiklash ham shu ulanish orqali ishlaydi. " +
         "Qaytadan ulash uchun paneldan yangi kod oling.",
       { reply_markup: { remove_keyboard: true } },
@@ -165,13 +166,13 @@ async function linkByCode(code: string, chatId: string, ctx: Context) {
       return;
     }
     if (clinic.telegramChatId === chatId) {
-      await ctx.reply(`✅ «${clinic.name}» allaqachon shu chatga ulangan.`, { reply_markup: CLINIC_MENU });
+      await ctx.reply(`✅ «${esc(clinic.name)}» allaqachon shu chatga ulangan.`, { reply_markup: CLINIC_MENU });
       return;
     }
     await db.clinic.update({ where: { id: clinic.id }, data: { telegramChatId: chatId } });
     await db.auditLog.create({ data: { actorRole: "BOT", actorName: clinic.name, action: "TG_LINK", entity: "Clinic", entityId: clinic.id } }).catch(() => {});
     await ctx.reply(
-      `✅ «${clinic.name}» klinikasi ulandi!\n\nYangi yozuv so'rovlari shu yerga tushadi — tugmalar bilan tasdiqlaysiz.`,
+      `✅ «${esc(clinic.name)}» klinikasi ulandi!\n\nYangi yozuv so'rovlari shu yerga tushadi — tugmalar bilan tasdiqlaysiz.`,
       { reply_markup: CLINIC_MENU }
     );
   } else if (code.startsWith("u_")) {
@@ -187,7 +188,7 @@ async function linkByCode(code: string, chatId: string, ctx: Context) {
     await db.user.update({ where: { id: user.id }, data: { telegramChatId: chatId } });
     await db.auditLog.create({ data: { actorId: user.id, actorRole: "BOT", actorName: user.name ?? user.phone, action: "TG_LINK", entity: "User", entityId: user.id } }).catch(() => {});
     await ctx.reply(
-      `✅ Hisobingiz ulandi${user.name ? `, ${user.name}` : ""}!\n\nYozuvlaringiz holati va eslatmalar shu yerga keladi.`,
+      `✅ Hisobingiz ulandi${user.name ? `, ${esc(user.name)}` : ""}!\n\nYozuvlaringiz holati va eslatmalar shu yerga keladi.`,
       { reply_markup: PATIENT_MENU }
     );
   } else {
@@ -221,7 +222,7 @@ bot.on("message:contact", async (ctx) => {
   }
   if (otp.phone !== contactPhone) {
     await ctx.reply(
-      `❌ Mos kelmadi.\nSaytda kiritilgan: ${otp.phone}\nTelegram raqamingiz: ${contactPhone}\n\nSayt/ilovada Telegram raqamingizni kiriting va qaytadan urining.`,
+      `❌ Mos kelmadi.\nSaytda kiritilgan: ${esc(otp.phone)}\nTelegram raqamingiz: ${contactPhone}\n\nSayt/ilovada Telegram raqamingizni kiriting va qaytadan urining.`,
       { reply_markup: { remove_keyboard: true } }
     );
     return;
@@ -297,7 +298,7 @@ bot.on("message:text", async (ctx) => {
       const st = a.status === "CONFIRMED" ? "✅ Tasdiqlangan" : a.status === "PENDING" ? "⏳ Kutilmoqda" : "📅 Boshqa vaqt taklifi";
       const kb = new InlineKeyboard().text("❌ Bekor qilish", `aptcancel:${a.id}`);
       await ctx.reply(
-        `${st}\n🏥 <b>${a.clinic.name}</b>\n🕐 ${fmtDT(a.requestedAt)}\n📍 ${a.clinic.address}${a.status === "CONFIRMED" ? `\n🔑 Kod: <code>${a.code}</code>` : ""}`,
+        `${st}\n🏥 <b>${esc(a.clinic.name)}</b>\n🕐 ${fmtDT(a.requestedAt)}\n📍 ${esc(a.clinic.address)}${a.status === "CONFIRMED" ? `\n🔑 Kod: <code>${a.code}</code>` : ""}`,
         { parse_mode: "HTML", reply_markup: kb }
       );
     }
@@ -321,7 +322,7 @@ bot.on("message:text", async (ctx) => {
           .text("✅ Tasdiqlash", `apt:confirm:${a.id}`)
           .text("❌ Rad etish", `apt:reject:${a.id}`);
         await ctx.reply(
-          `⏳ <b>${a.user.name ?? "Bemor"}</b> — ${a.user.phone}\n🕐 ${fmtDT(a.requestedAt)}${a.note ? `\n💬 ${a.note}` : ""}`,
+          `⏳ <b>${esc(a.user.name ?? "Bemor")}</b> — ${esc(a.user.phone)}\n🕐 ${fmtDT(a.requestedAt)}${a.note ? `\n💬 ${esc(a.note)}` : ""}`,
           { parse_mode: "HTML", reply_markup: kb }
         );
       }
@@ -345,7 +346,7 @@ bot.on("message:text", async (ctx) => {
       }
       const lines = items.map((a) => {
         const st = a.status === "CONFIRMED" ? "🕐" : a.status === "ARRIVED" ? "🟢" : "✔️";
-        return `${st} ${fmtDT(a.requestedAt).split(", ")[1]} — ${a.user.name ?? a.user.phone}${a.doctor ? ` (${a.doctor.name})` : ""}`;
+        return `${st} ${fmtDT(a.requestedAt).split(", ")[1]} — ${esc(a.user.name ?? a.user.phone)}${a.doctor ? ` (${esc(a.doctor.name)})` : ""}`;
       });
       await ctx.reply(`📋 <b>Bugungi yozuvlar (${items.length}):</b>\n\n${lines.join("\n")}`, { parse_mode: "HTML" });
       return;
@@ -396,7 +397,7 @@ bot.on("callback_query:data", async (ctx) => {
       await ctx.reply(
         openNow
           ? "Hozir kecha-kunduz ishlaydigan klinika topilmadi."
-          : `${key} tumanida klinika topilmadi. Boshqa tumanni tanlang.`,
+          : `${esc(key)} tumanida klinika topilmadi. Boshqa tumanni tanlang.`,
       );
       return;
     }
@@ -405,14 +406,14 @@ bot.on("callback_query:data", async (ctx) => {
       const stars = c.rating > 0 ? ` ⭐ ${c.rating.toFixed(1)}` : "";
       const nonstop = c.is247 ? " · 24/7" : "";
       return (
-        `${i + 1}. <b>${c.name}</b>${stars}${nonstop}\n` +
-        `    📍 ${c.address}\n` +
+        `${i + 1}. <b>${esc(c.name)}</b>${stars}${nonstop}\n` +
+        `    📍 ${esc(c.address)}\n` +
         `    <a href="${SITE}/klinika/${c.slug}">Batafsil va qabulga yozilish →</a>`
       );
     });
 
     await ctx.reply(
-      `${openNow ? "🌙 <b>Kecha-kunduz ishlaydiganlar</b>" : `🏥 <b>${key} tumani</b>`} (${clinics.length} ta):\n\n` +
+      `${openNow ? "🌙 <b>Kecha-kunduz ishlaydiganlar</b>" : `🏥 <b>${esc(key)} tumani</b>`} (${clinics.length} ta):\n\n` +
         lines.join("\n\n"),
       { parse_mode: "HTML", link_preview_options: { is_disabled: true } },
     );
@@ -451,15 +452,15 @@ bot.on("callback_query:data", async (ctx) => {
     if (apt.user.telegramChatId) {
       const text =
         action === "confirm"
-          ? `✅ <b>${apt.clinic.name}</b> yozuvingizni tasdiqladi!\n\n🕐 ${fmtDT(apt.requestedAt)}\n📍 ${apt.clinic.address}\n🔑 Yozuv kodi: <code>${apt.code}</code>`
-          : `❌ <b>${apt.clinic.name}</b> so'rovingizni rad etdi. Ilovada boshqa klinika tanlashingiz mumkin.`;
+          ? `✅ <b>${esc(apt.clinic.name)}</b> yozuvingizni tasdiqladi!\n\n🕐 ${fmtDT(apt.requestedAt)}\n📍 ${esc(apt.clinic.address)}\n🔑 Yozuv kodi: <code>${apt.code}</code>`
+          : `❌ <b>${esc(apt.clinic.name)}</b> so'rovingizni rad etdi. Ilovada boshqa klinika tanlashingiz mumkin.`;
       await bot.api.sendMessage(apt.user.telegramChatId, text, { parse_mode: "HTML" }).catch(() => {});
     }
     await db.notification.create({
       data: {
         userId: apt.userId,
         type: action === "confirm" ? "APT_CONFIRMED" : "APT_REJECTED",
-        title: action === "confirm" ? `${apt.clinic.name} yozuvingizni tasdiqladi ✅` : `${apt.clinic.name} so'rovni rad etdi`,
+        title: action === "confirm" ? `${esc(apt.clinic.name)} yozuvingizni tasdiqladi ✅` : `${esc(apt.clinic.name)} so'rovni rad etdi`,
         body: action === "confirm" ? `${fmtDT(apt.requestedAt)} · kod: ${apt.code}` : "Boshqa klinika tanlashingiz mumkin.",
         link: "/profil",
       },
@@ -551,14 +552,14 @@ async function reminderTick() {
     if (hoursLeft <= 24 && hoursLeft > 20 && !apt.reminded24) {
       await bot.api.sendMessage(
         apt.user.telegramChatId,
-        `🔔 Eslatma: ertaga <b>${apt.clinic.name}</b> da qabulingiz bor.\n🕐 ${fmtDT(apt.requestedAt)}\n📍 ${apt.clinic.address}\n\nBora olmasangiz, bekor qiling — boshqa bemorga joy bo'shaydi.`,
+        `🔔 Eslatma: ertaga <b>${esc(apt.clinic.name)}</b> da qabulingiz bor.\n🕐 ${fmtDT(apt.requestedAt)}\n📍 ${esc(apt.clinic.address)}\n\nBora olmasangiz, bekor qiling — boshqa bemorga joy bo'shaydi.`,
         { parse_mode: "HTML" }
       ).catch(() => {});
       await db.appointment.update({ where: { id: apt.id }, data: { reminded24: true } });
     } else if (hoursLeft <= 2 && hoursLeft > 0.5 && !apt.reminded2) {
       await bot.api.sendMessage(
         apt.user.telegramChatId,
-        `🔔 2 soatdan keyin qabul: <b>${apt.clinic.name}</b>\n🕐 ${fmtDT(apt.requestedAt)}\n📍 ${apt.clinic.address}\n🔑 Kod: <code>${apt.code}</code>\n\nKelgach stoldagi QR kodni skanerlashni unutmang.`,
+        `🔔 2 soatdan keyin qabul: <b>${esc(apt.clinic.name)}</b>\n🕐 ${fmtDT(apt.requestedAt)}\n📍 ${esc(apt.clinic.address)}\n🔑 Kod: <code>${apt.code}</code>\n\nKelgach stoldagi QR kodni skanerlashni unutmang.`,
         { parse_mode: "HTML" }
       ).catch(() => {});
       await db.appointment.update({ where: { id: apt.id }, data: { reminded2: true } });
@@ -596,14 +597,14 @@ async function preventiveTick() {
         userId: apt.userId,
         type: "PREVENTIVE",
         title: "Profilaktik ko'rik vaqti keldi 🪥",
-        body: `${apt.clinic.name} dagi tashrifingizdan 6 oy o'tdi. Yiliga 2 marta ko'rik ko'p muammolarning oldini oladi.`,
+        body: `${esc(apt.clinic.name)} dagi tashrifingizdan 6 oy o'tdi. Yiliga 2 marta ko'rik ko'p muammolarning oldini oladi.`,
         link: `/klinika/${apt.clinic.slug}`,
       },
     });
     if (apt.user.telegramChatId) {
       await bot.api.sendMessage(
         apt.user.telegramChatId,
-        `🪥 <b>Profilaktik ko'rik vaqti keldi</b>\n\n${apt.clinic.name} dagi tashrifingizdan 6 oy o'tdi. Yiliga 2 marta ko'rik — sog'lom tishlar garovi. Ilovadan qulay vaqtga yozilishingiz mumkin.`,
+        `🪥 <b>Profilaktik ko'rik vaqti keldi</b>\n\n${esc(apt.clinic.name)} dagi tashrifingizdan 6 oy o'tdi. Yiliga 2 marta ko'rik — sog'lom tishlar garovi. Ilovadan qulay vaqtga yozilishingiz mumkin.`,
         { parse_mode: "HTML" }
       ).catch(() => {});
     }

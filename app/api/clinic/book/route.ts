@@ -5,7 +5,7 @@ import { audit } from "@/lib/audit";
 import { rateLimit } from "@/lib/ratelimit";
 import { normalizePhone } from "@/lib/phone";
 import { pushToUser } from "@/lib/push";
-import { tgSend } from "@/lib/telegram";
+import { tgSend, tgEscape as esc } from "@/lib/telegram";
 import { fmtDateTimeUz } from "@/lib/date-uz";
 
 /**
@@ -106,15 +106,15 @@ export async function POST(req: NextRequest) {
     data: {
       userId: patient.id,
       type: "APT_CONFIRMED",
-      title: `${clinic.name} sizni qabulga yozdi`,
-      body: `${fmtDateTimeUz(requestedAt)} · ${clinic.address}`,
+      title: `${esc(clinic.name)} sizni qabulga yozdi`,
+      body: `${fmtDateTimeUz(requestedAt)} · ${esc(clinic.address)}`,
       link: "/profil",
     },
   }).catch(() => {});
 
 
   void pushToUser(patient.id, {
-    title: `${clinic.name} sizni qabulga yozdi`,
+    title: `${esc(clinic.name)} sizni qabulga yozdi`,
     body: fmtDateTimeUz(requestedAt),
     link: "appointments",
   });
@@ -122,7 +122,7 @@ export async function POST(req: NextRequest) {
   if (patient.telegramChatId) {
     void tgSend(
       patient.telegramChatId,
-      `📅 <b>${clinic.name}</b> sizni qabulga yozdi\n\n🕐 ${fmtDateTimeUz(requestedAt)}\n📍 ${clinic.address}\n\n` +
+      `📅 <b>${esc(clinic.name)}</b> sizni qabulga yozdi\n\n🕐 ${fmtDateTimeUz(requestedAt)}\n📍 ${esc(clinic.address)}\n\n` +
       `Kelganingizda resepshndagi QR kodni skanerlang.`
     );
   }

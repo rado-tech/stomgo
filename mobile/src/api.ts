@@ -7,9 +7,12 @@ import Constants from "expo-constants";
  * Sessiya: JWT token (Authorization: Bearer).
  */
 
-const DEFAULT_URL =
-  (Constants.expoConfig?.extra?.apiUrl as string | undefined) ??
-  "https://negotiations-thank-durable-court.trycloudflare.com";
+/**
+ * Server manzili yig'ilish vaqtida beriladi (app.config.js -> STOMGO_API_URL).
+ * Zaxira qiymat ataylab yo'q: manzilsiz yig'ilgan ilova jimgina eski
+ * tunnelga ulanib ketmasligi kerak.
+ */
+const DEFAULT_URL = (Constants.expoConfig?.extra?.apiUrl as string | undefined) ?? "";
 
 let cachedUrl: string | null = null;
 let cachedToken: string | null | undefined;
@@ -179,7 +182,7 @@ export async function uploadImage(
     throw new Error(
       aborted
         ? "Internet sekin — rasm yuborilmadi. Qayta urining."
-        : "Serverga ulanib bo'lmadi. Internetni yoki Profil > Server sozlamasini tekshiring."
+        : "Serverga ulanib bo'lmadi. Internet aloqasini tekshirib, qayta urining."
     );
   }
   clearTimeout(timer);

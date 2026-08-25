@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { revokeSessions } from "@/lib/auth";
 import { rateLimit } from "@/lib/ratelimit";
 import { audit } from "@/lib/audit";
-import { tgSend, tgConfigured } from "@/lib/telegram";
+import { tgSend, tgConfigured, tgEscape as esc } from "@/lib/telegram";
 import bcrypt from "bcryptjs";
 
 /**
@@ -67,7 +67,7 @@ export async function POST(req: NextRequest) {
 
   await tgSend(
     user.telegramChatId,
-    `🔑 <b>Parolni tiklash</b>\n\nLogin: <code>${username}</code>\n` +
+    `🔑 <b>Parolni tiklash</b>\n\nLogin: <code>${esc(username)}</code>\n` +
     `Tasdiqlash kodi: <code>${code}</code>\n\n` +
     `Kod 10 daqiqa amal qiladi. Agar buni siz so'ramagan bo'lsangiz — ` +
     `kodni HECH KIMGA bermang va administratorga xabar bering.`

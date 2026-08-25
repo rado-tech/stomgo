@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { View, Text, ScrollView, Pressable, Linking, TextInput, Alert } from "react-native";
 import Constants from "expo-constants";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -59,6 +59,25 @@ export default function SettingsScreen({ navigation }: {
   const [serverUrl, setServerUrl] = useState("");
   const [authed, setAuthed] = useState(false);
   const [bot, setBot] = useState("finaybot");
+
+  /**
+   * Server manzilini almashtirish — FAQAT sinov uchun.
+   *
+   * Bu qator odatiy foydalanuvchiga ko'rinmaydi: kimdir "chegirma olish uchun
+   * sozlamalarga kirib shu manzilni yozing" desa, ilova soxta serverga ulanib
+   * kirish kodlari va suhbatlarni o'sha yerga yuborardi.
+   * Ochish uchun versiya raqamini 7 marta bosish kerak.
+   */
+  const [devUnlocked, setDevUnlocked] = useState(false);
+  const tapCount = useRef(0);
+
+  const onVersionTap = () => {
+    tapCount.current += 1;
+    if (tapCount.current >= 7 && !devUnlocked) {
+      setDevUnlocked(true);
+      Alert.alert("Sinov rejimi", "Server sozlamasi ochildi.");
+    }
+  };
 
   useEffect(() => { void getBaseUrl().then(setServerUrl); }, []);
   useEffect(() => { void getToken().then((t) => setAuthed(!!t)); }, []);
@@ -132,7 +151,8 @@ export default function SettingsScreen({ navigation }: {
 
   const saveServer = async () => {
     const v = serverUrl.trim().replace(/\/+$/, "");
-    if (!/^https?:\/\/.+/.test(v)) {
+    // Faqat https: http bo'lsa kirish kodlari ochiq tarmoqda ketardi
+    if (!/^https:\/\/[^\s/]+/.test(v)) {
       Alert.alert("Manzil noto'g'ri", "https:// bilan boshlanishi kerak");
       return;
     }
@@ -176,8 +196,10 @@ export default function SettingsScreen({ navigation }: {
           <Row icon="megaphone-outline" label={t("settings.partnership")} onPress={() => void openUrl("/oferta")} />
           <Row icon="document-text-outline" label={t("settings.privacy")} onPress={() => void openUrl("/maxfiylik")} />
           <Row icon="headset-outline" label={t("settings.support")}
-            onPress={() => navigation.navigate("Tabs", { screen: "Xabarlar" })} />
-          <Row icon="server-outline" label={t("settings.server")} onPress={() => setServerOpen(true)} last />
+            onPress={() => navigation.navigate("Tabs", { screen: "Xabarlar" })} last={!devUnlocked} />
+          {devUnlocked && (
+            <Row icon="server-outline" label={t("settings.server")} onPress={() => setServerOpen(true)} last />
+          )}
         </Group>
 
         {authed && (
@@ -205,9 +227,11 @@ export default function SettingsScreen({ navigation }: {
           </Pressable>
         )}
 
-        <Text style={{ fontSize: 12.5, color: C.faint, textAlign: "center", marginTop: 18 }}>
-          StomGo {version}{build ? ` (${build})` : ""}
-        </Text>
+        <Pressable onPress={onVersionTap} style={{ marginTop: 18 }}>
+          <Text style={{ fontSize: 12.5, color: C.faint, textAlign: "center" }}>
+            StomGo {version}{build ? ` (${build})` : ""}
+          </Text>
+        </Pressable>
       </ScrollView>
 
       {/* Til */}

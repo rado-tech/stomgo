@@ -85,3 +85,8 @@ StomGo.apk
 # MapLibre worker fayllari — postinstall/prebuild avtomatik ko' chiradi
 # (versiya nomuvofiqligi bo'lmasligi uchun repoda saqlanmaydi)
 /public/maplibre/
+
+# Play Market imzo kaliti parollari — HECH QACHON git ga tushmasin
+keystore.properties
+*.keystore.properties
+/mobile/android/app/keystore.properties

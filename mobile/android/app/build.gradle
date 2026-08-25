@@ -90,6 +90,18 @@ def enableMinifyInReleaseBuilds = (findProperty('android.enableMinifyInReleaseBu
  */
 def jscFlavor = 'io.github.react-native-community:jsc-android:2026004.+'
 
+// ---- Play Market imzo kaliti ----
+// keystore.properties bo'lmasa yig'ilish davom etadi, lekin debug kaliti bilan.
+def keystorePropertiesFile = rootProject.file("app/keystore.properties")
+def keystoreProperties = new Properties()
+if (keystorePropertiesFile.exists()) {
+    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+} else {
+    logger.warn("
+[StomGo] app/keystore.properties topilmadi — release APK DEBUG kaliti bilan imzolanadi. Play Market bunday faylni qabul qilmaydi.
+")
+}
+
 android {
     ndkVersion rootProject.ext.ndkVersion
 
@@ -113,15 +125,26 @@ android {
             keyAlias 'androiddebugkey'
             keyPassword 'android'
         }
+        // Play Market uchun imzo. Parollar keystore.properties da —
+        // u ham, kalitning o'zi ham git ga tushmaydi (.gitignore).
+        release {
+            if (keystorePropertiesFile.exists()) {
+                storeFile file(keystoreProperties['storeFile'])
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
     }
     buildTypes {
         debug {
             signingConfig signingConfigs.debug
         }
         release {
-            // Caution! In production, you need to generate your own keystore file.
-            // see https://reactnative.dev/docs/signed-apk-android.
-            signingConfig signingConfigs.debug
+            // Kalit bo'lsa — Play Market uchun imzolanadi.
+            // Bo'lmasa debug kaliti ishlatiladi va yig'ilish OGOHLANTIRADI:
+            // bunday APK ni Play Market qabul qilmaydi.
+            signingConfig keystorePropertiesFile.exists() ? signingConfigs.release : signingConfigs.debug
             def enableShrinkResources = findProperty('android.enableShrinkResourcesInReleaseBuilds') ?: 'false'
             shrinkResources enableShrinkResources.toBoolean()
             minifyEnabled enableMinifyInReleaseBuilds

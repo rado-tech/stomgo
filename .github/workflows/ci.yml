@@ -147,7 +147,7 @@ jobs:
       - name: Taqiqlangan fayllar yo'qligini tekshirish
         run: |
           bad=$(git ls-files |
-            grep -Ei '(^|/)(\.env($|\.)|secrets/|.*\.keystore$|.*\.jks$|PAROLLAR|.*\.apk$|.*\.aab$)' |
+            grep -Ei '(^|/)(\.env($|\.)|secrets/|.*\.keystore$|.*\.jks$|keystore\.properties$|PAROLLAR|.*\.apk$|.*\.aab$|google-services\.json$)' |
             grep -v '^\.env\.example$' || true)
           if [ -n "$bad" ]; then
             echo "Bu fayllar git da bo'lmasligi kerak:"; echo "$bad"; exit 1

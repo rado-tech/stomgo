@@ -3,7 +3,7 @@ import { db } from "@/lib/db";
 import { requireUser, unauthorized } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { pushToClinic } from "@/lib/push";
-import { tgSend } from "@/lib/telegram";
+import { tgSend, tgEscape as esc } from "@/lib/telegram";
 import { fmtDateTimeUz } from "@/lib/date-uz";
 
 /** Bemor tomonidan: bekor qilish, muqobil vaqtni qabul qilish, o'zi kelganini belgilash (check-in) */
@@ -77,13 +77,13 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id
     const who = user.name ?? user.phone;
     void pushToClinic(apt.clinicId, {
       title: "Vaqt o'zgartirildi",
-      body: `${who}: yangi vaqt ${fmtDateTimeUz(newAt)} — tasdiqlashingiz kerak`,
+      body: `${esc(who)}: yangi vaqt ${fmtDateTimeUz(newAt)} — tasdiqlashingiz kerak`,
       link: "appointments",
     });
     if (apt.clinic.telegramChatId) {
       void tgSend(apt.clinic.telegramChatId,
         `🔄 <b>Bemor vaqtni o'zgartirdi</b>
-${who}
+${esc(who)}
 Yangi vaqt: <b>${fmtDateTimeUz(newAt)}</b>
 
 Panelda tasdiqlang.`);
