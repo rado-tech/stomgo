@@ -10,6 +10,7 @@ import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import ThemeToggle from "@/components/ThemeToggle";
 import SiteFooter from "@/components/SiteFooter";
+import { useT } from "@/components/I18nProvider";
 
 type Item = {
   code: string; name: string; category: string;
@@ -18,6 +19,7 @@ type Item = {
 
 /** Xizmatlar bo'yicha narx solishtirish — bosh ro'yxat */
 export default function PricesPage() {
+  const { t } = useT();
   const [items, setItems] = useState<Item[] | null>(null);
   const [q, setQ] = useState("");
 
@@ -58,7 +60,7 @@ export default function PricesPage() {
             </svg>
             <input
               value={q} onChange={(e) => setQ(e.target.value)}
-              placeholder="Xizmat nomi: implant, plomba, breket..."
+              placeholder={t("prices.searchPlaceholder")}
               className="w-full bg-transparent text-[14px] outline-none placeholder:text-zinc-400"
             />
           </div>
@@ -68,7 +70,7 @@ export default function PricesPage() {
           {!items ? (
             <div className="flex justify-center py-16"><Spinner /></div>
           ) : shown.length === 0 ? (
-            <EmptyState icon="🔍" title="Xizmat topilmadi" subtitle="Boshqa nom bilan qidirib ko'ring" />
+            <EmptyState icon="🔍" title={t("prices.notFound")} subtitle={t("clinics.notFoundHint")} />
           ) : (
             Object.entries(byCat).map(([cat, list]) => (
               <section key={cat} className="mb-5">

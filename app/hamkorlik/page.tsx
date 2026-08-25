@@ -5,6 +5,7 @@ import Link from "next/link";
 import { api } from "@/lib/client";
 import { DISTRICTS } from "@/lib/districts";
 import BackButton from "@/components/BackButton";
+import { useT } from "@/components/I18nProvider";
 
 const EMPTY = {
   clinicName: "", district: "", address: "", phone: "",
@@ -13,6 +14,7 @@ const EMPTY = {
 
 /** Klinika hamkorlik arizasi — kirish talab qilinmaydi */
 export default function PartnershipPage() {
+  const { t } = useT();
   const [form, setForm] = useState(EMPTY);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -41,13 +43,12 @@ export default function PartnershipPage() {
     return (
       <main className="mx-auto flex min-h-dvh max-w-md flex-col items-center justify-center px-5 text-center">
         <p className="text-5xl">🤝</p>
-        <h1 className="mt-3 text-xl font-extrabold">Ariza qabul qilindi</h1>
+        <h1 className="mt-3 text-xl font-extrabold">{t("partner.sentTitle")}</h1>
         <p className="mt-2 text-[14px] leading-relaxed text-zinc-500">
-          Bir ish kuni ichida ko&apos;rsatilgan raqamga bog&apos;lanamiz.
-          Suhbatdan keyin sizga panelga kirish uchun login va parol beriladi.
+          {t("partner.sentBody")}
         </p>
         <Link href="/" className="mt-6 rounded-2xl bg-teal-600 px-6 py-3 font-bold text-white">
-          Bosh sahifaga
+          {t("partner.toHome")}
         </Link>
       </main>
     );
@@ -57,38 +58,38 @@ export default function PartnershipPage() {
     <main className="mx-auto max-w-2xl px-4 py-5 md:py-8">
       <div className="flex items-center gap-3">
         <BackButton href="/" />
-        <h1 className="text-xl font-extrabold md:text-2xl">Klinikangizni StomGo&apos;ga qo&apos;shing</h1>
+        <h1 className="text-xl font-extrabold md:text-2xl">{t("partner.title")}</h1>
       </div>
 
       <div className="mt-4 grid gap-3 sm:grid-cols-3">
-        {[
-          ["Bemor o'zi topadi", "Xaritada, narx bo'yicha va tumaningiz bo'yicha qidiruvda ko'rinasiz"],
-          ["Yozuvlar bir joyda", "Qabullar, suhbatlar va sharhlar — bitta panelda"],
-          ["Boshlash bepul", "Ulanish uchun to'lov yo'q"],
-        ].map(([t, d]) => (
-          <div key={t} className="rounded-2xl border border-zinc-100 bg-white p-3.5">
-            <p className="text-[13.5px] font-bold">{t}</p>
-            <p className="mt-1 text-[12.5px] leading-relaxed text-zinc-500">{d}</p>
+        {([
+          ["partner.b1", "partner.b1d"],
+          ["partner.b2", "partner.b2d"],
+          ["partner.b3", "partner.b3d"],
+        ] as const).map(([title, desc]) => (
+          <div key={title} className="rounded-2xl border border-zinc-100 bg-white p-3.5">
+            <p className="text-[13.5px] font-bold">{t(title)}</p>
+            <p className="mt-1 text-[12.5px] leading-relaxed text-zinc-500">{t(desc)}</p>
           </div>
         ))}
       </div>
 
       <div className="mt-5 space-y-3 rounded-2xl border border-zinc-100 bg-white p-4">
         <label className={label}>
-          Klinika nomi *
+          {t("partner.clinicName")} *
           <input value={form.clinicName} onChange={set("clinicName")} placeholder="Masalan: ProDent" className={input} />
         </label>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <label className={label}>
-            Tuman *
+            {t("partner.district")} *
             <select value={form.district} onChange={set("district")} className={input}>
-              <option value="">Tanlang</option>
+              <option value="">{t("partner.choose")}</option>
               {DISTRICTS.map((d) => <option key={d} value={d}>{d}</option>)}
             </select>
           </label>
           <label className={label}>
-            Shifokorlar soni
+            {t("partner.doctorCount")}
             <input
               value={form.doctorCount}
               onChange={(e) => setForm((f) => ({ ...f, doctorCount: e.target.value.replace(/\D/g, "").slice(0, 3) }))}
@@ -98,18 +99,18 @@ export default function PartnershipPage() {
         </div>
 
         <label className={label}>
-          Manzil
-          <input value={form.address} onChange={set("address")} placeholder="Ko'cha, uy" className={input} />
+          {t("partner.address")}
+          <input value={form.address} onChange={set("address")} placeholder={t("partner.addressPlaceholder")} className={input} />
         </label>
 
         <div className="border-t border-zinc-100 pt-3">
           <div className="grid gap-3 sm:grid-cols-2">
             <label className={label}>
-              Bog&apos;lanish uchun ism *
+              {t("partner.contactName")} *
               <input value={form.contactName} onChange={set("contactName")} placeholder="Ism Familiya" className={input} />
             </label>
             <label className={label}>
-              Telefon *
+              {t("auth.phone")} *
               <div className="mt-1 flex items-center gap-2 rounded-xl border border-zinc-200 bg-white px-3.5 focus-within:border-teal-500">
                 <span className="text-[14px] font-semibold text-zinc-500">+998</span>
                 <span className="h-5 w-px bg-zinc-200" />
@@ -129,10 +130,10 @@ export default function PartnershipPage() {
         </div>
 
         <label className={label}>
-          Qo&apos;shimcha
+          {t("partner.note")}
           <textarea
             value={form.note} onChange={set("note")} rows={3}
-            placeholder="Ish vaqti, mutaxassisliklar yoki savolingiz"
+            placeholder={t("partner.notePlaceholder")}
             className={`${input} resize-none`}
           />
         </label>
@@ -144,7 +145,7 @@ export default function PartnershipPage() {
           disabled={busy || !form.clinicName.trim() || !form.district || !form.contactName.trim() || !form.phone.trim()}
           className="w-full rounded-2xl bg-teal-600 py-3.5 font-bold text-white disabled:opacity-40"
         >
-          {busy ? "Yuborilmoqda..." : "Ariza yuborish"}
+          {busy ? t("partner.sending") : t("partner.submit")}
         </button>
 
         <p className="text-center text-[12px] leading-relaxed text-zinc-400">
