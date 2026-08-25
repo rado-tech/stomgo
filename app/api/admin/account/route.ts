@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
-import { requireRole, unauthorized } from "@/lib/auth";
+import { requireRole, unauthorized, revokeSessions } from "@/lib/auth";
 import { rateLimit } from "@/lib/ratelimit";
 import { audit } from "@/lib/audit";
 import { tgSend, tgConfigured } from "@/lib/telegram";
@@ -131,6 +131,9 @@ export async function PUT(req: NextRequest) {
     db.user.update({ where: { id: admin.id }, data }),
     db.otpCode.update({ where: { id: otp.id }, data: { usedAt: new Date() } }),
   ]);
+
+  // Parol o'zgargan bo'lsa — boshqa qurilmalardagi sessiyalar bekor
+  if (data.passwordHash) await revokeSessions(admin.id);
 
   audit({
     actorId: admin.id, actorRole: "ADMIN", actorName: admin.name ?? "Admin",

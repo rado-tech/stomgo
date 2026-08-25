@@ -9,7 +9,7 @@ import type { TriageAnswers } from "./rules";
  * Kalit olish: https://aistudio.google.com (bepul tarif mavjud)
  */
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.7-flash";
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? "gemini-3.1-flash-lite";
 
 const RESPONSE_SCHEMA = {
   type: "OBJECT",

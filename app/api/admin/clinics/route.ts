@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { requireRole, unauthorized, createSession, setSessionCookie } from "@/lib/auth";
+import { requireRole, unauthorized, createSession, setSessionCookie, revokeSessions } from "@/lib/auth";
 import { audit } from "@/lib/audit";
 import { deleteImage } from "@/lib/uploads";
 import { TASHKENT_CENTER } from "@/lib/geo";
@@ -128,8 +128,16 @@ export async function PATCH(req: NextRequest) {
   if (body.action === "impersonate") {
     const clinicUser = await db.user.findFirst({ where: { clinicId: id, role: "CLINIC" } });
     if (!clinicUser) return NextResponse.json({ error: "Klinika hisobi topilmadi" }, { status: 404 });
-    const token = await createSession({ uid: clinicUser.id, role: "CLINIC", clinicId: id });
-    audit({ ...actor, action: "CLINIC_UPDATE", entity: "Clinic", entityId: id, meta: { impersonate: true } });
+    // Sessiya QISQA muddatli va "admin nomidan" deb belgilanadi:
+    // shundan keyingi har bir amal jurnalda admin bilan bog'lanadi
+    const token = await createSession(
+      { uid: clinicUser.id, role: "CLINIC", clinicId: id, impBy: admin.id },
+      "2h",
+    );
+    audit({
+      ...actor, action: "CLINIC_IMPERSONATE", entity: "Clinic", entityId: id,
+      meta: { clinic: clinic.name, expiresIn: "2 soat" },
+    });
     const res = NextResponse.json({ ok: true, redirect: "/clinic" });
     setSessionCookie(res, token);
     return res;
@@ -140,6 +148,8 @@ export async function PATCH(req: NextRequest) {
     if (!clinicUser) return NextResponse.json({ error: "Klinika hisobi topilmadi" }, { status: 404 });
     const password = genPassword();
     await db.user.update({ where: { id: clinicUser.id }, data: { passwordHash: await bcrypt.hash(password, 10) } });
+    // Eski parol bilan ochilgan sessiyalar darhol bekor bo'lsin
+    await revokeSessions(clinicUser.id);
     audit({ ...actor, action: "CLINIC_PASSWORD_RESET", entity: "Clinic", entityId: id });
     return NextResponse.json({ ok: true, credentials: { username: clinicUser.username, password } });
   }

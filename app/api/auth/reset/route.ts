@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { revokeSessions } from "@/lib/auth";
 import { rateLimit } from "@/lib/ratelimit";
 import { audit } from "@/lib/audit";
 import { tgSend, tgConfigured } from "@/lib/telegram";
@@ -122,6 +123,10 @@ export async function PUT(req: NextRequest) {
       data: { usedAt: new Date() },
     }),
   ]);
+
+  // Parol tiklandi — eski sessiyalar bekor. Hisob o'g'irlangan bo'lsa,
+  // buzg'unchining ochiq sessiyasi shu yerda uziladi.
+  await revokeSessions(user.id);
 
   audit({
     actorId: user.id, actorRole: user.role, actorName: username,

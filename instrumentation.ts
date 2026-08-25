@@ -1,4 +1,5 @@
 import * as Sentry from "@sentry/nextjs";
+import { checkProductionConfig } from "@/lib/config";
 
 /**
  * Server tomonidagi xatolarni kuzatish (Sentry).
@@ -6,6 +7,16 @@ import * as Sentry from "@sentry/nextjs";
  * DSN olish: sentry.io → project yaratish → DSN → .env ga SENTRY_DSN=...
  */
 export async function register() {
+  // Sozlama tekshiruvi — xavfsiz bo'lmagan holatda ishga tushmaymiz
+  const { errors, warnings } = checkProductionConfig();
+  for (const w of warnings) console.warn("[sozlama] " + w);
+  if (errors.length > 0) {
+    console.error(["", "[SOZLAMA XATOSI] Server ishga tushmaydi:", ""].join("\n"));
+    for (const e of errors) console.error("  - " + e);
+    console.error("");
+    throw new Error(`Xavfsiz bo'lmagan sozlama: ${errors.length} ta xato`);
+  }
+
   if (process.env.SENTRY_DSN) {
     Sentry.init({
       dsn: process.env.SENTRY_DSN,

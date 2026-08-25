@@ -42,10 +42,23 @@ export default function CheckinPage({ params }: { params: Promise<{ token: strin
       .catch((e) => setError((e as Error).message));
   }, [token]);
 
+  /** Qurilma koordinatasi — server klinikaga yaqinligini tekshiradi */
+  const getPosition = () =>
+    new Promise<{ lat: number; lng: number } | null>((resolve) => {
+      if (!navigator.geolocation) return resolve(null);
+      navigator.geolocation.getCurrentPosition(
+        (p) => resolve({ lat: p.coords.latitude, lng: p.coords.longitude }),
+        // Ruxsat berilmasa yoki xato bo'lsa — koordinatasiz davom etamiz
+        () => resolve(null),
+        { enableHighAccuracy: true, timeout: 8000, maximumAge: 60_000 },
+      );
+    });
+
   const doCheckin = async () => {
     setBusy(true);
     try {
-      const res = await api<{ clinicName: string; appointmentId: string; canReview: boolean }>("/api/checkin", { json: { token } });
+      const pos = await getPosition();
+      const res = await api<{ clinicName: string; appointmentId: string; canReview: boolean }>("/api/checkin", { json: { token, ...(pos ?? {}) } });
       setAptId(res.appointmentId);
       setPhase(res.canReview ? "review" : "done");
     } catch (e) {
