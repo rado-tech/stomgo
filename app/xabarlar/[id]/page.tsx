@@ -6,14 +6,16 @@ import { api } from "@/lib/client";
 import { Spinner } from "@/components/ui";
 import { fmtDateTime } from "@/lib/format";
 import ChatComposer from "@/components/ChatComposer";
+import { useT } from "@/components/I18nProvider";
 
 type Msg = { id: string; senderRole: string; senderName: string; body: string; imageUrl: string | null; createdAt: string };
 
 /** Suhbat oynasi — bemor tomoni */
 export default function ChatPage({ params }: { params: Promise<{ id: string }> }) {
+  const { t } = useT();
   const { id } = use(params);
   const [messages, setMessages] = useState<Msg[] | null>(null);
-  const [title, setTitle] = useState("Suhbat");
+  const [title, setTitle] = useState(t("chat.conversation"));
   const [myRole, setMyRole] = useState("PATIENT");
   const endRef = useRef<HTMLDivElement>(null);
 
@@ -67,7 +69,7 @@ export default function ChatPage({ params }: { params: Promise<{ id: string }> }
                   {m.imageUrl && (
                     <a href={m.imageUrl} target="_blank" rel="noreferrer" className="block">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={m.imageUrl} alt="Suhbatdagi rasm" loading="lazy"
+                      <img src={m.imageUrl} alt={t("chat.imageInChat")} loading="lazy"
                         className="max-h-72 w-full rounded-xl object-cover" />
                     </a>
                   )}

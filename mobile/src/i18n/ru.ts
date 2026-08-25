@@ -169,6 +169,15 @@ export const ru: Record<keyof typeof uz, string> = {
   "settings.server": "Настройка сервера",
   "settings.logoutConfirm": "Выйти из аккаунта?",
 
+  "notif.loginToSee": "Войдите, чтобы видеть уведомления",
+  "notif.empty": "Пока нет уведомлений",
+  "notif.emptyHint": "Здесь появятся подтверждения записей и напоминания о профилактическом осмотре",
+  "notif.markAllRead": "Отметить все прочитанными",
+  "chat.conversation": "Переписка",
+  "chat.imageInChat": "Изображение в переписке",
+  "chat.imageToSend": "Изображение для отправки",
+  "chat.removeImage": "Убрать изображение",
+
   // ---------- Xizmat nomlari ----------
   "service.konsultatsiya": "Консультация",
   "service.plomba": "Пломба",

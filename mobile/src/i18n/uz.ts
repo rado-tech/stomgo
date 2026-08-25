@@ -168,6 +168,15 @@ export const uz = {
   "settings.server": "Server sozlamasi",
   "settings.logoutConfirm": "Hisobdan chiqmoqchimisiz?",
 
+  "notif.loginToSee": "Bildirishnomalarni ko'rish uchun kiring",
+  "notif.empty": "Hozircha bildirishnoma yo'q",
+  "notif.emptyHint": "Yozuv tasdiqlanganda va profilaktik ko'rik vaqti kelganda shu yerda ko'rasiz",
+  "notif.markAllRead": "Hammasi o'qildi",
+  "chat.conversation": "Suhbat",
+  "chat.imageInChat": "Suhbatdagi rasm",
+  "chat.imageToSend": "Yuboriladigan rasm",
+  "chat.removeImage": "Rasmni olib tashlash",
+
   // ---------- Xizmat nomlari ----------
   "service.konsultatsiya": "Konsultatsiya",
   "service.plomba": "Plomba",

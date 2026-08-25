@@ -8,10 +8,12 @@ import { Spinner, EmptyState } from "@/components/ui";
 import BottomNav from "@/components/BottomNav";
 import TopNav from "@/components/TopNav";
 import { fmtDateTime } from "@/lib/format";
+import { useT } from "@/components/I18nProvider";
 
 type Notif = { id: string; title: string; body: string; link: string; readAt: string | null; createdAt: string };
 
 export default function NotificationsPage() {
+  const { t } = useT();
   const { user, loading } = useUser();
   const [data, setData] = useState<{ items: Notif[]; unread: number } | null>(null);
 
@@ -37,7 +39,7 @@ export default function NotificationsPage() {
       <>
       <TopNav />
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col items-center justify-center px-6 pb-20">
-        <EmptyState icon="🔔" title="Bildirishnomalarni ko'rish uchun kiring" />
+        <EmptyState icon="🔔" title={t("notif.loginToSee")} />
         <Link href="/kirish?next=/bildirishnomalar" className="w-full rounded-2xl bg-teal-600 py-3.5 text-center font-bold text-white">
           Kirish
         </Link>
@@ -53,10 +55,10 @@ export default function NotificationsPage() {
     <div className="mx-auto min-h-dvh w-full max-w-3xl px-4 pb-24 pt-5 md:pb-12">
       <div className="flex items-center gap-3">
         <BackButton />
-        <h1 className="flex-1 text-xl font-extrabold">Bildirishnomalar</h1>
+        <h1 className="flex-1 text-xl font-extrabold">{t("nav.notifications")}</h1>
         {(data?.unread ?? 0) > 0 && (
           <button onClick={markAllRead} className="text-[13px] font-semibold text-teal-700">
-            Hammasini o&apos;qildi
+            {t("notif.markAllRead")}
           </button>
         )}
       </div>
@@ -64,8 +66,8 @@ export default function NotificationsPage() {
       {!data ? (
         <div className="mt-6 space-y-3">{[1, 2, 3].map((i) => <div key={i} className="sg-skeleton h-20" />)}</div>
       ) : data.items.length === 0 ? (
-        <EmptyState icon="🔕" title="Hozircha bildirishnoma yo'q"
-          subtitle="Yozuv tasdiqlanganda va profilaktik ko'rik vaqti kelganda shu yerda ko'rasiz" />
+        <EmptyState icon="🔕" title={t("notif.empty")}
+          subtitle={t("notif.emptyHint")} />
       ) : (
         <div className="mt-4 space-y-2.5">
           {data.items.map((n) => (

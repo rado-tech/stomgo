@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useT } from "@/components/I18nProvider";
 
 /**
  * Xabar yozish paneli — matn va rasm (tish surati).
@@ -10,12 +11,14 @@ import { useRef, useState } from "react";
 export default function ChatComposer({
   conversationId,
   onSend,
-  placeholder = "Xabar yozing...",
+  placeholder,
 }: {
   conversationId: string;
   onSend: (payload: { body: string; imageUrl: string | null }) => Promise<void>;
+  /** Berilmasa — tarjima lug'atidagi standart matn ishlatiladi */
   placeholder?: string;
 }) {
+  const { t } = useT();
   const [text, setText] = useState("");
   const [image, setImage] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -64,8 +67,8 @@ export default function ChatComposer({
       {image && (
         <div className="relative mb-2 inline-block">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={image} alt="Yuboriladigan rasm" className="h-20 w-20 rounded-xl object-cover" />
-          <button onClick={() => setImage(null)} aria-label="Rasmni olib tashlash"
+          <img src={image} alt={t("chat.imageToSend")} className="h-20 w-20 rounded-xl object-cover" />
+          <button onClick={() => setImage(null)} aria-label={t("chat.removeImage")}
             className="absolute -right-1.5 -top-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-zinc-800 text-[13px] font-bold text-white">
             ×
           </button>
@@ -77,7 +80,7 @@ export default function ChatComposer({
         <input ref={fileRef} type="file" accept="image/*" className="hidden"
           onChange={(e) => pick(e.target.files?.[0])} />
         <button onClick={() => fileRef.current?.click()} disabled={uploading}
-          aria-label="Rasm biriktirish"
+          aria-label={t("chat.photo")}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-100 text-zinc-600 disabled:opacity-50">
           {uploading ? (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-zinc-400 border-t-transparent" />
@@ -93,13 +96,13 @@ export default function ChatComposer({
         <textarea
           value={text} onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(); } }}
-          rows={1} placeholder={placeholder}
+          rows={1} placeholder={placeholder ?? t("chat.placeholder")}
           className="max-h-28 flex-1 resize-none rounded-2xl bg-zinc-100 px-4 py-2.5 text-[14.5px] outline-none"
         />
 
         <button onClick={send} disabled={(!text.trim() && !image) || sending}
           className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-600 text-white disabled:opacity-40"
-          aria-label="Yuborish">
+          aria-label={t("chat.send")}>
           <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M3.4 20.4l17.5-8.4L3.4 3.6 3.4 10l12 2-12 2z" /></svg>
         </button>
       </div>
