@@ -31,6 +31,9 @@ export async function GET() {
   });
 }
 
+/** Eng ko'pi 90 kun oldinga yozilish mumkin — vaqtni ko'chirish bilan bir xil */
+const MAX_AHEAD_MS = 90 * 24 * 60 * 60 * 1000;
+
 export async function POST(req: NextRequest) {
   const user = await requireUser();
   if (!user) return unauthorized();
@@ -60,6 +63,10 @@ export async function POST(req: NextRequest) {
   const requestedAt = new Date(`${date}T${time}:00+05:00`);
   if (isNaN(requestedAt.getTime()) || requestedAt.getTime() < Date.now() - 60_000) {
     return NextResponse.json({ error: "O'tgan vaqtga yozilib bo'lmaydi" }, { status: 400 });
+  }
+  // Yuqori chegara: 2099-yilga yozib klinika navbatini to'ldirib bo'lmasin
+  if (requestedAt.getTime() > Date.now() + MAX_AHEAD_MS) {
+    return NextResponse.json({ error: "Ko'pi bilan 90 kun oldinga yozilish mumkin" }, { status: 400 });
   }
 
   // Bitta klinikaga bitta faol so'rov

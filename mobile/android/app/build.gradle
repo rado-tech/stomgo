@@ -97,9 +97,7 @@ def keystoreProperties = new Properties()
 if (keystorePropertiesFile.exists()) {
     keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 } else {
-    logger.warn("
-[StomGo] app/keystore.properties topilmadi — release APK DEBUG kaliti bilan imzolanadi. Play Market bunday faylni qabul qilmaydi.
-")
+    logger.warn("[StomGo] app/keystore.properties topilmadi - release APK DEBUG kaliti bilan imzolanadi. Play Market bunday faylni qabul qilmaydi.")
 }
 
 android {

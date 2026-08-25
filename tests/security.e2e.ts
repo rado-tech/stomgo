@@ -175,3 +175,53 @@ describe("Fayl va yo'l himoyasi", () => {
     }
   });
 });
+
+describe("Biznes mantiq suiiste'moli", () => {
+  test("o'tgan vaqtga yozilib bo'lmaydi (tokensiz ham 401 dan o'tmaydi)", async () => {
+    const res = await call("/api/appointments", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ clinicId: "x", date: "2020-01-01", time: "10:00" }),
+    });
+    // Avval avtorizatsiya, keyin validatsiya — ikkalasi ham to'sadi
+    assert.ok(res.status === 401 || res.status === 400, `kutilmagan: ${res.status}`);
+  });
+
+  test("QR check-in tokensiz ishlamaydi", async () => {
+    const res = await call("/api/checkin", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ token: "x", lat: 41.3, lng: 69.2 }),
+    });
+    assert.ok(res.status === 401 || res.status === 403);
+  });
+
+  test("noto'g'ri QR token klinika ma'lumotini bermaydi", async () => {
+    const res = await call("/api/checkin?token=bunday-token-yoq-12345");
+    assert.equal(res.status, 404);
+  });
+});
+
+describe("Sozlama va sirlar", () => {
+  test("javoblarda muhit o'zgaruvchilari ko'rinmaydi", async () => {
+    const res = await call("/api/clinics");
+    const text = await res.text();
+    for (const bad of ["AUTH_SECRET", "DATABASE_URL", "TELEGRAM_BOT_TOKEN", "GEMINI_API_KEY", "postgresql://"]) {
+      assert.ok(!text.includes(bad), `javobda "${bad}" bor`);
+    }
+  });
+
+  test("brauzerga ketadigan sahifada server sirlari yo'q", async () => {
+    const res = await call("/");
+    const html = await res.text();
+    for (const bad of ["AUTH_SECRET", "TELEGRAM_BOT_TOKEN", "GEMINI_API_KEY", "SENTRY_DSN=", "postgresql://"]) {
+      assert.ok(!html.includes(bad), `sahifada "${bad}" bor`);
+    }
+  });
+
+  test("manba xaritalari ishlab chiqarishda ochiq emas", async () => {
+    // .map fayllari kodni to'liq ochib beradi
+    const res = await call("/_next/static/chunks/main.js.map");
+    assert.ok(res.status >= 400, `manba xaritasi ochiq: ${res.status}`);
+  });
+});
