@@ -36,7 +36,7 @@
       "supportsTablet": false
     },
     "extra": {
-      "apiUrl": "https://nova-roberts-trout-soonest.trycloudflare.com"
+      "apiUrl": "https://theory-evans-assumptions-post.trycloudflare.com"
     },
     "plugins": [
       "@maplibre/maplibre-react-native",
